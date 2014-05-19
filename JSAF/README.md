@@ -7,3 +7,8 @@ JAVA Selenium Automation Framework
 
 ## Instructions ##
 * Reads excel file from /resources/ folder
+
+## RoadMap ##
+* Executing selenium functions
+* Adding assertion checks
+* Reporting
