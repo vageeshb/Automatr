@@ -69,38 +69,41 @@ public class Selenium {
 	 * @param actionValue
 	 * @return
 	 */
-	public static String action(Object element, String actionType, String actionValue) {
-		String stepStatus;
+	public static String[] action(Object element, String actionType, String actionValue) {
+		String[] stepStatus = new String[2];
 		switch (actionType.toLowerCase()) {
 			case "input":
 				((WebElement) element).sendKeys(actionValue);
-				stepStatus = ".";
+				stepStatus[0] = ".";
 				break;
 			case "click":
 				((WebElement) element).click();
-				stepStatus = ".";
+				stepStatus[0] = ".";
 				break;
 			case "clear":
 				((WebElement) element).clear();
-				stepStatus = ".";
+				stepStatus[0] = ".";
 				break;
-			case "verify":
-				if(element.getClass().toString().toLowerCase().equals("string") == true) {
+			case "assert":
+				if(element.getClass().getSimpleName().equalsIgnoreCase("string") == true) {
 					if(element.toString().equals(actionValue)) {
-						stepStatus = ".";
+						stepStatus[0] = ".";
 					} else {
-						stepStatus = "F";
+						stepStatus[0] = "F";
+						stepStatus[1] = "Expected: " + actionValue + ", Found: " + element.toString() + ".";
 					}
 				} else {
 					if(((WebElement) element).getText().equals(actionValue)) {
-						stepStatus = ".";
+						stepStatus[0] = ".";
 					} else {
-						stepStatus = "F";
+						stepStatus[0] = "F";
+						stepStatus[1] = "Expected: " + actionValue + ", Found: " + ((WebElement) element).getText() + ".";
 					}
 				}
 				break;
 			default:
-				stepStatus = "F";
+				stepStatus[0] = "F";
+				stepStatus[1] = "Could not perform --> " + actionType;
 				break;
 		}
 		return stepStatus;

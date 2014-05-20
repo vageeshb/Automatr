@@ -27,26 +27,28 @@ public class Execute {
 		ArrayList temp = (ArrayList)testStep;
 		String [] step = (String[]) temp.toArray(new String[temp.size()]);
 		String value = (String) testData.get(step[4]);
-		
+		String stepResult[] = new String[2]; 
 		Object e = Selenium.find(driver, step[1], step[2]);
 		
-		switch(e.getClass().getSimpleName().toLowerCase()) {
-			case "string":
-				if (value != null) {
-					System.out.print(Selenium.action((String)e, step[3], value));
-				} else {
-					System.out.print(Selenium.action((String)e, step[3], step[4]));
-				}
-				break;
-			case "remotewebelement":
-				if (value != null) {
-					System.out.print(Selenium.action((WebElement)e, step[3], value));
-				} else {
-					System.out.print(Selenium.action((WebElement)e, step[3], step[4]));
-				}
-				break;
-			default:
-				break;
+		if(e.getClass().getSimpleName().equalsIgnoreCase("string")) {
+			if (value != null) {
+				stepResult = Selenium.action((String)e, step[3], value);
+			} else {
+				stepResult = Selenium.action((String)e, step[3], step[4]);
+			}
+		} else {
+			if (value != null) {
+				stepResult = Selenium.action((WebElement)e, step[3], value);
+			} else {
+				stepResult = Selenium.action((WebElement)e, step[3], step[4]);
+			}
+		}
+		
+		if (stepResult[1] != null && stepResult[0].equalsIgnoreCase("f")) {
+			System.out.println(stepResult[0]);
+			//System.out.println(stepResult[1]);
+		} else {
+			System.out.print(stepResult[0]);
 		}
 		
 		
