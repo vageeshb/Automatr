@@ -13,18 +13,33 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
+/**
+ * Selenium Automation Framework
+ * reporter.HtmlReport.java
+ * Purpose: Contains methods to perform report generation.
+ * 
+ * @author VAGEESH BHASIN
+ * @version 0.0.1
+ */
 public class HtmlReport {
-	private static String report = "";
+	// Class Variables
+	private static String reportContent = "";
 	private static String filename = "";
 	
+	/**
+	 * This method creates a directory using dirName.
+	 * @param dirName The directory path
+	 */
 	private static void makeDir(String dirName) {
 		File theDir = new File(dirName);
-		// if the directory does not exist, create it
 		if (!theDir.exists()) {
 		    theDir.mkdir();  
 		}
 	}
 	
+	/**
+	 * This method writes the head section of report
+	 */
 	private static String header() {
 		return	 	"<head>\n"
 				+ 	"	<title>Test Execution Report</title>\n"
@@ -35,6 +50,9 @@ public class HtmlReport {
 				+ 	"</head>\n";
 	}
 	
+	/**
+	 * This method writes the Page Header of the report
+	 */
 	private static String pageHeader() {
 		
 		DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
@@ -45,6 +63,9 @@ public class HtmlReport {
 				+	"</div>\n";
 	}
 	
+	/**
+	 * This method writes the navigation tabs of the report.
+	 */
 	private static String navTabs() {
 		return 		"<!-- Nav Tabs -->\n"
 				+	"<ul class='nav nav-tabs nav-justified'>\n"
@@ -55,6 +76,7 @@ public class HtmlReport {
 	}
 	
 	/**
+	 * This method writes the summary tab details using the input parameter.
 	 * @param summary - String array with values as [Number of modules, Tests Executed, Test Steps executed, Number of TC passed, Number of TC failed, Number of TC skipped]
 	 */
 	private static String summaryTab(String[] summary) {
@@ -94,6 +116,10 @@ public class HtmlReport {
 				+ 	"</div>\n";
 	}
 	
+	/**
+	 * This method writes the module-wise summary details.
+	 * @param moduleSum The HashMap of module summary with Module Name as Key and Summary Detail as Value.
+	 */
 	private static String moduleTab(HashMap<?,?> moduleSum) {
 		String temp =   "<div class='tab-pane' id='modules'>\n"
 					+   "	<table class='table table-bordered table-hover'>\n"
@@ -107,6 +133,7 @@ public class HtmlReport {
 					+   "			</tr>\n"
 					+   "		</thead>\n"
 					+   "		<tbody>\n";
+		
 		Set<?> set = moduleSum.entrySet();
 		Iterator<?> i = set.iterator();
 		while(i.hasNext()) {
@@ -120,24 +147,42 @@ public class HtmlReport {
 					+	"				<td>" + moduleStatus[3] + "</td>\n"
 					+	" 			</tr>\n";
 		}
+		
 		temp 		+=	"		</tbody>\n"
 					+ 	"	</table>\n"
 					+ 	"</div>";
 		return temp;
 	}
 	
-	private static String detailTab() {
+	/**
+	 * This method writes the test details of each module, including test name, test step name and status.
+	 * @param details The HashMap contains each module test details
+	 */
+	private static String detailTab(HashMap<?,?> details) {
 		String temp = 	"<div class='tab-pane' id='details'>"
 					+ 	"	<div class='panel panel-default'>"
 					+ 	"		<div class='panel-heading'><strong>Details of Test Execution</strong></div>"
 					+ 	"			<div class='panel-body'>"
-					+ 	"				<ul class='nav nav-tabs nav-justified'>"
+					+ 	"				<ul class='nav nav-tabs nav-justified'>";
 		
-        			//    <li class='active'><a href='#contact' data-toggle='tab'>CONTACT</a></li>
-        
-        			+	"				</ul>"
-        			+ 	"				<br>"
-        			+ 	"				<div class='tab-content'><div class='tab-pane active' id='contact'>"
+		Set<?> set = details.keySet();
+		Iterator<?> i = set.iterator();
+		while(i.hasNext()) {
+			String moduleName = i.next().toString().toUpperCase();
+			temp += 	"<li><a href='#" + moduleName + "' data-toggle='tab'>" + moduleName + "</a></li>";
+		}
+		
+		temp 		+=	"				</ul>\n"
+        			+ 	"				<br>\n"
+        			+	"				<div class='tab-content'>\n";
+		
+		set = details.entrySet();
+		i = set.iterator();
+		while(i.hasNext()) {
+			Map.Entry<?, ?> me = (Map.Entry<?, ?>)i.next();
+			String moduleName = me.getKey().toString().toUpperCase();
+			String[] moduleSteps = (String[])me.getValue();
+			temp	+=  "				<div class='tab-pane' id='" + moduleName + "'>"
         			+ 	"					<table class='table table-bordered table-hover'>"
         			+ 	"						<thead>"
         			+ 	"							<tr class='info'>"
@@ -147,14 +192,12 @@ public class HtmlReport {
         			+ 	"							</tr>"
         			+ 	"						</thead>"
         			+	"						<tbody>"
-              
-        			/* 	<tr class='success'>
-                  			<td>1</td>
-                  			<td>Enter username</td>
-                  			<td>PASS</td>
-                		</tr>
-                	*/
-                  
+        			+ 	"							<tr>";
+			
+			for (int j = 0; j < moduleSteps.length; j++) {
+				temp +=	"								<td>" + moduleSteps[j] + "</td>";
+			}
+        	temp 	+=	"							</tr>"
         			+	"						</tbody>"
         			+	"					</table>"
         			+ 	"				</div>"
@@ -162,9 +205,13 @@ public class HtmlReport {
         			+ 	"		</div>"
         			+ 	"	</div>"
         			+ 	"</div>";
+		}
 		return temp;
 	}
 	
+	/**
+	 * This method writes the error modal element used to display error screenshots.
+	 */
 	private static String modal() {
 		return 		"<!-- Error modal -->"
 				+	"<div class='modal fade' id='error-modal' tabindex='-1' role='dialog' aria-labelledby='error-modal-label' aria-hidden='true' style='display: none;'>\n"
@@ -187,6 +234,10 @@ public class HtmlReport {
 				+ 	"</div>\n";
 	}
 	
+	
+	/**
+	 * This method writes the footer content.
+	 */
 	private static String footer() {
 		return 		"<div id='footer'>\n"
 				+ 	"	<div class='text-center'>\n"
@@ -197,19 +248,14 @@ public class HtmlReport {
 				+ 	"</div>\n";
 	}
 	
-	private static void body() {
-		HashMap<String, String[]> temp = new HashMap<String, String[]>();
-		String[] strTemp = new String[4];
-		strTemp[0] = "4";
-		strTemp[1] = "3";
-		strTemp[2] = "4";
-		strTemp[3] = "2";
-		String[] summary = new String[5];
-		for (int i = 0; i < 6; i++) {
-			summary[i] = "5";
-		}
-		temp.put("Contact", strTemp);
-		report += "<html>\n"
+	
+	/**
+	 * This method uses all the other method to fill the report.
+	 * @param results The results HashMap contains data to be provided to other functions.
+	 */
+	private static void fillReport(HashMap<?,?> results) {
+		
+		reportContent += "<html>\n"
 				+ header()
 				+ "<body>\n"
 				+ "<div class='container'>\n"
@@ -217,11 +263,11 @@ public class HtmlReport {
 				+ navTabs()
 				+ "<br>\n<div class='tab-content'>\n"
 				+ "<!-- Summary Tab -->\n"
-				+ summaryTab(summary)
+				+ summaryTab((String[])results.get("summary"))
 				+ "\n<!-- Module Tab -->\n"
-				+ moduleTab(temp)
+				+ moduleTab((HashMap<?,?>)results.get("modules"))
 				+ "\n<!-- Details Tab -->\n"
-				+ detailTab()
+				+ detailTab((HashMap<?,?>)results.get("details"))
 				+ "</div>\n"
 				+ modal()
 				+ footer()
@@ -230,6 +276,11 @@ public class HtmlReport {
 				+ "</html>\n";		
 	}
 	
+	/**
+	 * This method creates and copies report resources for a report.
+	 * @param dirName Target directory to which resources will be copied.
+	 * @throws IOException
+	 */
 	private static void createReportResources(String dirName) throws IOException {
 		String currentDir = System.getProperty("user.dir");
 		
@@ -240,6 +291,10 @@ public class HtmlReport {
 	}
 	
 	
+	/**
+	 * This method creates the report, writes the class variable 'reportContent' to the created report file.
+	 * @throws IOException
+	 */
 	public static void createReport() throws IOException {
 		
 		// Get Present Working Directory
@@ -255,25 +310,56 @@ public class HtmlReport {
 		
 		// Create report.html in the folder, print contents of test execution and close file
 		PrintWriter writer = new PrintWriter(currentDir + "/reports/" + filename + "/report.html", "UTF-8");
-		writer.println(report);
+		writer.println(reportContent);
 		writer.close();
 	}
 	
+	/**
+	 * This method takes in the necessary HashMap to generate the sections of report.
+	 * @param args
+	 * @throws IOException
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static void main(String[] args) throws IOException {
+		HashMap results = new HashMap();
+		HashMap temp = new HashMap();
+		HashMap temp1 = new HashMap();
+		
+		String[] summary = new String[6];
+		for (int i = 0; i < 6; i++) {
+			summary[i] = "5";
+		}
+		results.put("summary", summary);
+		
+		String[] moduleContact = new String[4];
+		for (int i = 0; i < 4; i++) {
+			moduleContact[i] = "1";
+		}
+		temp.put("contact", moduleContact);
+		results.put("modules", temp);
+		
+		String[] detailsContact = new String[3];
+		detailsContact[0] = "1";
+		detailsContact[1] = "Enter Username";
+		detailsContact[2] = "PASS";
+		
+		temp1.put("contact", detailsContact);
+		
+		results.put("details", temp1);
+		
 		setFilename();
-		body();
+		fillReport(results);
 		createReport();
 	}
+	
+	// Getter and Setter functions
 	public static String getReport() {
-		return report;
-	}
-	public static void setReport(String report) {
-		HtmlReport.report = report;
+		return reportContent;
 	}
 	public static String getFilename() {
 		return filename;
 	}
-	public static void setFilename() {
+	private static void setFilename() {
 		DateFormat fileFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
 		Date date = new Date();
 		HtmlReport.filename = fileFormat.format(date).toString();

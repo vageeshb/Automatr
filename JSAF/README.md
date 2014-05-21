@@ -8,7 +8,16 @@ JAVA Selenium Automation Framework
 ## Instructions ##
 * Reads excel file from /resources/ folder
 
+## Selenium Capabilities ##
+* Can locate web elements using all 7 locating methods (Name, TagName, CSS, XPATH, ID, LinkText, PartialLinkText)
+* Can perform below selenium functions:
+ * Input
+ * Click / Check
+ * Clear
+ * Assert
+
 ## RoadMap ##
-* Executing selenium functions
+* ~~Executing selenium functions~~ - In-Progress
 * Adding assertion checks
-* Reporting
+* ~~Reporting~~ - Completed
+* Using results from execution module in reporting module

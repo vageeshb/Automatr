@@ -5,7 +5,21 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+/**
+ * Selenium Automation Framework
+ * def.Selenium.java
+ * Purpose: Contains Selenium related methods
+ *
+ * @version 0.0.1
+ * @author VAGEESH BHASIN
+ */
+
 public class Selenium {
+	/**
+	 * This method is used to return a web driver depending on the parameter 'driverType'.
+	 * @param driverType
+	 * @return WebDriver
+	 */
 	public static WebDriver getDriver(String driverType) {
 		switch (driverType.toLowerCase()) {
 		case "firefox":
@@ -17,7 +31,7 @@ public class Selenium {
 	}
 	
 	/**
-	 * {@code initDriver(url, driverType)} This method is used to initialize driver and open the web page given by 'url'
+	 * This method is used to initialize driver and open the web page given by the parameter 'url'.
 	 * @param url - Specifies the web page to open
 	 * @param driverType - Specifies the web driver type (Firefox, Chrome, Internet Explorer)
 	 * @return WebDriver
@@ -30,10 +44,11 @@ public class Selenium {
 	}
 	
 	/**
-	 * @param driver - Takes in a webdriver to locate element
-	 * @param locatorType - Specifies the method to be used to locate a web element
-	 * @param locatorValue - Specifies the value for the location method to use
-	 * @return WebElement - Returns a web element if found
+	 * This method is used to locate a web element on the web page.
+	 * @param driver Selenium web driver to locate element
+	 * @param locatorType Specifies the method to be used to locate a web element
+	 * @param locatorValue Specifies the value for the location method to use
+	 * @return WebElement
 	 */
 	public static Object find(WebDriver driver, String locatorType, String locatorValue) {
 		
@@ -64,10 +79,11 @@ public class Selenium {
 	}
 	
 	/**
-	 * @param element
-	 * @param actionType
-	 * @param actionValue
-	 * @return
+	 * This method performs a selenium action on the web element.
+	 * @param element The web element on which an action is to be performed
+	 * @param actionType The type of action to be performed
+	 * @param actionValue The value to be used with performing an action
+	 * @return status, message(Default = null)
 	 */
 	public static String[] action(Object element, String actionType, String actionValue) {
 		String[] stepStatus = new String[2];
