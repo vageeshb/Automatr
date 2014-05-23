@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,6 +13,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+
+import def.Logger;
 
 /**
  * Selenium Automation Framework
@@ -107,10 +110,6 @@ public class HtmlReport {
                 + 	"					<td class='danger'><strong>Failed</strong></td>\n"
                 + 	"					<td>" + summary[4] + "</td>\n"
                 + 	"				</tr>\n"
-                + 	"				<tr>\n"
-                + 	"					<td class='warning'><strong>Skipped</strong></td>\n"
-                + 	"					<td>" + summary[5] + "</td>\n"
-                + 	"				</tr>\n"
                 + 	"			</tbody>\n"
                 + 	"	</table>\n"
 				+ 	"</div>\n";
@@ -156,16 +155,17 @@ public class HtmlReport {
 	
 	/**
 	 * This method writes the test details of each module, including test name, test step name and status.
-	 * @param details The HashMap contains each module test details
+	 * @param hashMap The HashMap contains each module test details
 	 */
-	private static String detailTab(HashMap<?,?> details) {
+	@SuppressWarnings({ "unchecked" })
+	private static String detailTab(HashMap<?, ?> hashMap) {
 		String temp = 	"<div class='tab-pane' id='details'>"
 					+ 	"	<div class='panel panel-default'>"
 					+ 	"		<div class='panel-heading'><strong>Details of Test Execution</strong></div>"
 					+ 	"			<div class='panel-body'>"
 					+ 	"				<ul class='nav nav-tabs nav-justified'>";
 		
-		Set<?> set = details.keySet();
+		Set<?> set = hashMap.keySet();
 		Iterator<?> i = set.iterator();
 		while(i.hasNext()) {
 			String moduleName = i.next().toString().toUpperCase();
@@ -176,29 +176,34 @@ public class HtmlReport {
         			+ 	"				<br>\n"
         			+	"				<div class='tab-content'>\n";
 		
-		set = details.entrySet();
+		set = hashMap.entrySet();
 		i = set.iterator();
 		while(i.hasNext()) {
-			Map.Entry<?, ?> me = (Map.Entry<?, ?>)i.next();
+			Map.Entry<String, ArrayList<String[]>> me = (Map.Entry<String, ArrayList<String[]>>)i.next();
 			String moduleName = me.getKey().toString().toUpperCase();
-			String[] moduleSteps = (String[])me.getValue();
+			ArrayList<String[]> moduleSteps = (ArrayList<String[]>)me.getValue();
 			temp	+=  "				<div class='tab-pane' id='" + moduleName + "'>"
         			+ 	"					<table class='table table-bordered table-hover'>"
         			+ 	"						<thead>"
         			+ 	"							<tr class='info'>"
         			+ 	"								<th>Test Case Name</th>"
         			+ 	"								<th>Test Step Name</th>"
-        			+ 	"								<th>Status</th>"
+        			+ 	"								<th>Status</th>\n"
+        			+	"								<th>Start Time</th>\n"
+        			+ 	"								<th>End Time</th>\n"
         			+ 	"							</tr>"
         			+ 	"						</thead>"
-        			+	"						<tbody>"
-        			+ 	"							<tr>";
+        			+	"						<tbody>";
 			
-			for (int j = 0; j < moduleSteps.length; j++) {
-				temp +=	"								<td>" + moduleSteps[j] + "</td>";
+			for (String[] steps : moduleSteps) {
+				temp += "							<tr>\n";
+				for (int j = 0; j < steps.length; j++) {
+				temp +=	"								<td>" + steps[j] + "</td>";
+				}
+				temp += "							</tr>\n";
 			}
-        	temp 	+=	"							</tr>"
-        			+	"						</tbody>"
+				
+        	temp 	+=	"						</tbody>"
         			+	"					</table>"
         			+ 	"				</div>"
         			+ 	"			</div>"
@@ -316,40 +321,17 @@ public class HtmlReport {
 	
 	/**
 	 * This method takes in the necessary HashMap to generate the sections of report.
-	 * @param args
+	 * @param testExecutionResult A HashMap with (summary, modules, details) as Key and (Summary details, Module Details, Test Details) as Values.
 	 * @throws IOException
 	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static void main(String[] args) throws IOException {
-		HashMap results = new HashMap();
-		HashMap temp = new HashMap();
-		HashMap temp1 = new HashMap();
-		
-		String[] summary = new String[6];
-		for (int i = 0; i < 6; i++) {
-			summary[i] = "5";
-		}
-		results.put("summary", summary);
-		
-		String[] moduleContact = new String[4];
-		for (int i = 0; i < 4; i++) {
-			moduleContact[i] = "1";
-		}
-		temp.put("contact", moduleContact);
-		results.put("modules", temp);
-		
-		String[] detailsContact = new String[3];
-		detailsContact[0] = "1";
-		detailsContact[1] = "Enter Username";
-		detailsContact[2] = "PASS";
-		
-		temp1.put("contact", detailsContact);
-		
-		results.put("details", temp1);
-		
+	public static void generate(HashMap<String, ?> testExecutionResult) throws IOException {
 		setFilename();
-		fillReport(results);
+		fillReport(testExecutionResult);
 		createReport();
+		
+		Logger.separator();
+		System.out.println("Report Generated : " + filename + "/report.html");
+		Logger.separator();
 	}
 	
 	// Getter and Setter functions

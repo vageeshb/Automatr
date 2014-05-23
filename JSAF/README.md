@@ -17,7 +17,8 @@ JAVA Selenium Automation Framework
  * Assert
 
 ## RoadMap ##
-* ~~Executing selenium functions~~ - In-Progress
-* Adding assertion checks
+* ~~Basic selenium functions~~ - Completed
 * ~~Reporting~~ - Completed
-* Using results from execution module in reporting module
+* ~~Using results from execution module in reporting module~~ - Completed
+* Adding assertion checks
+* Adding advanced selenium functions

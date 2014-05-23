@@ -84,8 +84,10 @@ public class Execute {
 		}
 		
 		if (actionResult[0].equalsIgnoreCase(".")) {
+			System.out.print(".");
 			stepStatus[1] = "PASS";
 		} else {
+			System.out.print("F");
 			stepStatus[1] = "FAIL: " + actionResult[1];
 		}
 		

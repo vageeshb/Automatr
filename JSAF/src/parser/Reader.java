@@ -13,9 +13,8 @@ import def.*;;
 
 /**
  * Selenium Automation Framework
- * parser.Reader.java
- * Purpose: Contains methods to read and extract data from data file.
- * 
+ * @filename parser.Reader.java
+ * @purpose Contains methods to read and extract data from data file.
  * @author VAGEESH BHASIN
  * @version 0.0.1
  */
