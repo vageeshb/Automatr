@@ -1,5 +1,6 @@
 package def;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -33,5 +34,15 @@ import java.util.regex.Pattern;
 				}
 			}
 			return false;
+		}
+		/**
+		 * This method creates a directory using dirName.
+		 * @param dirName The directory path
+		 */
+		public static void makeDir(String dirName) {
+			File theDir = new File(dirName);
+			if (!theDir.exists()) {
+			    theDir.mkdir();  
+			}
 		}
 }

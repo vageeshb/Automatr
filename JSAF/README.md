@@ -15,10 +15,14 @@ JAVA Selenium Automation Framework
  * Click / Check
  * Clear
  * Assert
+  * Element Text Assert
+  * Current Url Assert
+* Takes screenshot in case of step failure
 
-## RoadMap ##
-* ~~Basic selenium functions~~ - Completed
-* ~~Reporting~~ - Completed
-* ~~Using results from execution module in reporting module~~ - Completed
-* Adding assertion checks
+## Road Map ##
+* ~~Basic selenium functions~~
+* ~~Reporting~~
+* ~~Using results from execution module in reporting module~~
+* ~~Take screenshot in case of step failure~~
+* Adding assertion checks - In-Progress
 * Adding advanced selenium functions

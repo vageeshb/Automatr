@@ -1,5 +1,6 @@
 package executor;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class Execute {
 	private static ArrayList<ArrayList<String>> defaultSteps;
 	private static String[] config;
 	private static WebDriver driver;
+	private static String currentModule;
 	private static HashMap<String, HashMap<String, ArrayList<String[]>>> status = new HashMap<String, HashMap<String, ArrayList<String[]>>>();
 	
 	/**
@@ -100,10 +102,11 @@ public class Execute {
 	 * This method takes in a hash of tests and passes each test step to method 'executeTestStep'
 	 * @param moduleName The name of the current module
 	 * @param tests HashMap with Test Name as Key and Test Steps as Value.
+	 * @throws IOException 
 	 * @returns HashMap with Test Name as Key and Test Step Status Array as Values.
 	 */
 	@SuppressWarnings("rawtypes")
-	private static HashMap<String, ArrayList<String[]>> executeTests(HashMap tests) {
+	private static HashMap<String, ArrayList<String[]>> executeTests(HashMap tests) throws IOException {
 		
 		// Variables
 		HashMap<String, ArrayList<String[]>> testStatus = new HashMap<String, ArrayList<String[]>>();
@@ -127,16 +130,43 @@ public class Execute {
 			// Execute Default steps first, if present
 			if (defaultSteps.isEmpty() == false) {
 				for (Object step : defaultSteps) {
-					temp.add(executeTestStep(step));
+					
+					String[] testStepResults = executeTestStep(step);
+					
+					// Take screenshot if test step failed
+					if (testStepResults[1].contains("FAIL")) {
+						String tempFileName = currentModule + "_" + me.getKey().toString() + "_" + testStepResults[0] + "_error.png"; 
+						Selenium.screenshot(driver, tempFileName);
+					}
+					
+					temp.add(testStepResults);
 				}
 				for (Object testStep : test) {
-					temp.add(executeTestStep(testStep));
+					
+					String[] testStepResults = executeTestStep(testStep);
+					
+					// Take screenshot if test step failed
+					if (testStepResults[1].contains("FAIL")) {
+						String tempFileName = currentModule + "_" + me.getKey().toString() + "_" + testStepResults[0] + "_error.png"; 
+						Selenium.screenshot(driver, tempFileName);
+					}
+					
+					temp.add(testStepResults);
 				}
 			} 
 			// Default steps not present, directly run test steps
 			else {
 				for (Object testStep : test) {
-					temp.add(executeTestStep(testStep));
+					
+					String[] testStepResults = executeTestStep(testStep);
+					
+					// Take screenshot if test step failed
+					if (testStepResults[1].contains("FAIL")) {
+						String tempFileName = currentModule + "_" + me.getKey().toString() + "_" + testStepResults[0] + "_error.png"; 
+						Selenium.screenshot(driver, tempFileName);
+					}
+					
+					temp.add(testStepResults);
 				}
 			}
 			
@@ -156,9 +186,10 @@ public class Execute {
 	 * @param testData The test data to be used.
 	 * @param defaultSteps The default steps to be executed before each test.
 	 * @return HashMap with Module Name as Key and Test Case Result HashMap as Values.
+	 * @throws IOException 
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap executionHash, HashMap testData, ArrayList defaultSteps) {
+	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap executionHash, HashMap testData, ArrayList defaultSteps) throws IOException {
 		Set set = executionHash.entrySet();
 		Iterator i = set.iterator();
 		
@@ -177,6 +208,8 @@ public class Execute {
 			Logger.separator();
 			
 			System.out.println("Executing Module: " + me.getKey().toString());
+			
+			currentModule = me.getKey().toString();
 			
 			Logger.separator();
 			

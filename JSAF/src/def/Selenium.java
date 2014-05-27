@@ -1,5 +1,9 @@
 package def;
 
+import java.io.File;
+import java.io.IOException;
+
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*; 
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -124,4 +128,24 @@ public class Selenium {
 		}
 		return stepStatus;
 	}
+	
+	/**
+	 * This method take a screenshot and saves it in a temporary folder (/temp)
+	 * @param driver WebDriver to take screenshot with
+	 * @param filename Name of the file to be saved as
+	 * @throws IOException
+	 */
+	public static void screenshot(WebDriver driver, String filename) throws IOException {
+		
+		File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+		
+		// Get Present Working Directory
+		String currentDir = System.getProperty("user.dir");
+
+		Utils.makeDir(currentDir + "/temp");
+		
+		FileUtils.copyFile(scrFile, new File(currentDir + "/temp/" + filename.toLowerCase()));
+	}
+	
+	
 }

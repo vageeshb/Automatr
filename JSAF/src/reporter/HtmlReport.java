@@ -15,6 +15,7 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 
 import def.Logger;
+import def.Utils;
 
 /**
  * Selenium Automation Framework
@@ -28,17 +29,6 @@ public class HtmlReport {
 	// Class Variables
 	private static String reportContent = "";
 	private static String filename = "";
-	
-	/**
-	 * This method creates a directory using dirName.
-	 * @param dirName The directory path
-	 */
-	private static void makeDir(String dirName) {
-		File theDir = new File(dirName);
-		if (!theDir.exists()) {
-		    theDir.mkdir();  
-		}
-	}
 	
 	/**
 	 * This method writes the head section of report
@@ -159,6 +149,7 @@ public class HtmlReport {
 	 */
 	@SuppressWarnings({ "unchecked" })
 	private static String detailTab(HashMap<?, ?> hashMap) {
+		boolean flag = true;
 		String temp = 	"<div class='tab-pane' id='details'>"
 					+ 	"	<div class='panel panel-default'>"
 					+ 	"		<div class='panel-heading'><strong>Details of Test Execution</strong></div>"
@@ -169,21 +160,31 @@ public class HtmlReport {
 		Iterator<?> i = set.iterator();
 		while(i.hasNext()) {
 			String moduleName = i.next().toString().toUpperCase();
-			temp += 	"<li><a href='#" + moduleName + "' data-toggle='tab'>" + moduleName + "</a></li>";
+			if(flag == true) {
+				temp += 	"<li class='active'><a href='#" + moduleName + "' data-toggle='tab'>" + moduleName + "</a></li>";
+				flag = false;
+			} else {
+				temp += 	"<li><a href='#" + moduleName + "' data-toggle='tab'>" + moduleName + "</a></li>";
+			}
 		}
 		
 		temp 		+=	"				</ul>\n"
         			+ 	"				<br>\n"
         			+	"				<div class='tab-content'>\n";
-		
+		flag = true;
 		set = hashMap.entrySet();
 		i = set.iterator();
 		while(i.hasNext()) {
 			Map.Entry<String, ArrayList<String[]>> me = (Map.Entry<String, ArrayList<String[]>>)i.next();
 			String moduleName = me.getKey().toString().toUpperCase();
 			ArrayList<String[]> moduleSteps = (ArrayList<String[]>)me.getValue();
-			temp	+=  "				<div class='tab-pane' id='" + moduleName + "'>"
-        			+ 	"					<table class='table table-bordered table-hover'>"
+			if(flag == true) {
+				temp	+=  "				<div class='tab-pane active' id='" + moduleName + "'>";
+				flag = false;
+			} else {
+				temp	+=  "				<div class='tab-pane' id='" + moduleName + "'>";
+			}
+			temp	+= 	"					<table class='table table-bordered table-hover'>"
         			+ 	"						<thead>"
         			+ 	"							<tr class='info'>"
         			+ 	"								<th>Test Case Name</th>"
@@ -196,9 +197,17 @@ public class HtmlReport {
         			+	"						<tbody>";
 			
 			for (String[] steps : moduleSteps) {
-				temp += "							<tr>\n";
+				if(steps[2].contains("FAIL")) {
+					temp += "							<tr class='danger'>\n";
+				} else {
+					temp += "							<tr class='success'>\n";
+				}
 				for (int j = 0; j < steps.length; j++) {
-				temp +=	"								<td>" + steps[j] + "</td>";
+					if(j==2 && steps[j].contains("FAIL")) {
+						temp +=	"								<td><a class='show-modal' href='" + moduleName.toLowerCase() + "_" + steps[0].toLowerCase() + "_" + steps[1].toLowerCase() + "_error.png'>" + steps[j] + "</a></td>";
+					} else {
+						temp +=	"								<td>" + steps[j] + "</td>";
+					}
 				}
 				temp += "							</tr>\n";
 			}
@@ -223,7 +232,7 @@ public class HtmlReport {
 				+	"	<div class='modal-dialog'>\n"
 				+ 	"		<div class='modal-content'>\n"
 				+ 	"			<div class='modal-header'>\n"
-				+ 	"				<button type='button' class='close' data-dismiss='modal' aria-hidden='true'>×</button>\n"
+				+ 	"				<button type='button' class='close' data-dismiss='modal' aria-hidden='true'>X</button>\n"
 				+ 	"				<h4 class='modal-title text-center' id='myModalLabel'><strong>Error Screen Shot</strong></h4>\n"
 				+ 	"			</div>\n"
 				+ 	"			<div class='modal-body'>\n"
@@ -296,6 +305,16 @@ public class HtmlReport {
 	}
 	
 	
+	private static void copyErrorScreenshots(String dirName) throws IOException {
+		// Get Present Working Directory
+		String errDirName = System.getProperty("user.dir") + "/temp";
+		File srcDir = new File(errDirName);
+		if (srcDir.exists()) {
+			FileUtils.copyDirectory(srcDir, new File(dirName));
+			FileUtils.deleteDirectory(srcDir);
+		}
+	}
+	
 	/**
 	 * This method creates the report, writes the class variable 'reportContent' to the created report file.
 	 * @throws IOException
@@ -306,12 +325,16 @@ public class HtmlReport {
 		String currentDir = System.getProperty("user.dir");
 		
 		// Create reports directory if it does not exist
-		makeDir(currentDir + "/reports");
+		Utils.makeDir(currentDir + "/reports");
 		
 		// Create individual report directory and copy resources(css,js) to that folder
-		makeDir(currentDir + "/reports/" + filename);
+		Utils.makeDir(currentDir + "/reports/" + filename);
 		String reportFolder = currentDir + "/reports/" + filename;
+		
 		createReportResources(reportFolder);
+		
+		// Copy error screenshots
+		copyErrorScreenshots(currentDir + "/reports/" + filename);
 		
 		// Create report.html in the folder, print contents of test execution and close file
 		PrintWriter writer = new PrintWriter(currentDir + "/reports/" + filename + "/report.html", "UTF-8");
