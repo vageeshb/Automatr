@@ -3,9 +3,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 import jxl.*;
 import jxl.read.biff.BiffException;
@@ -25,16 +22,15 @@ public class Reader {
 	 * @param workbook Workbook to read the configuration settings from.
 	 * @return Array(url, driverType, defaultSteps?)
 	 */
-	private static String[] readConfig(Workbook workbook) {
+	private static String[] readConfigSheet(Workbook workbook) {
 		
 		// Read and define 'Config' work sheet
 		Sheet configSheet = workbook.getSheet(0);
 		
 		// Assign config variables and return
-		String[] configs = new String[3];
+		String[] configs = new String[2];
 		configs[0] = configSheet.getCell(0,1).getContents();
 		configs[1] = configSheet.getCell(1,1).getContents();
-		configs[2] = configSheet.getCell(2,1).getContents();
 		return configs;
 	}
 	
@@ -43,80 +39,27 @@ public class Reader {
 	 * @param workbook Workbook from where the Execution Manager sheet will be read
 	 * @return HashMap (Module Name, Test Cases)
 	 */
-	private static HashMap<String, ArrayList<String>> readExecutionManager(Workbook workbook) {
+	private static HashMap<String, ArrayList<String>> readExecutionManagerSheet(Workbook workbook) {
 		
 		// Read and define 'Execution Manager' work sheet
-		Sheet executionSheet = workbook.getSheet(1);
+		Sheet execManagerSheet = workbook.getSheet("execution_manager");
 		
 		// Generate a hash of modules and test cases to be executed
-		HashMap<String, ArrayList<String>> executionList = new HashMap<String, ArrayList<String>>();
+		HashMap<String, ArrayList<String>> execHash = new HashMap<String, ArrayList<String>>();
 		
-		int numberOfRows = executionSheet.getRows();
+		int numberOfRows = execManagerSheet.getRows();
 		for (int i = 1; i < numberOfRows; i++) {
-			if (executionSheet.getCell(2,i).getContents().equalsIgnoreCase("y") == true) {
-				String moduleName = executionSheet.getCell(0,i).getContents();
-				if (executionList.containsKey(moduleName) == false ) {
-					ArrayList<String> al = new ArrayList<String>();
-					al.add(executionSheet.getCell(1,i).getContents());
-					executionList.put(moduleName, al);
-				} else {
-					ArrayList<String> temp = (ArrayList<String>) executionList.get(moduleName);
-					temp.add(executionSheet.getCell(1,i).getContents());
-					executionList.put(moduleName, temp);
+			String moduleName = execManagerSheet.getCell(0,i).getContents();
+			if (execManagerSheet.getCell(2,i).getContents().equalsIgnoreCase("y")) {
+				if (execHash.containsKey(moduleName) == false ) {
+					execHash.put(moduleName, new ArrayList<String>());
 				}
+				ArrayList<String> temp = (ArrayList<String>) execHash.get(moduleName);
+				temp.add(execManagerSheet.getCell(1,i).getContents());
+				execHash.put(moduleName, temp);
 			}
 		}
-		return executionList;
-	}
-	
-	/**
-	 * This method will read the data from 'before' sheet of data file and return an ArrayList of all default steps to perform before each test execution.
-	 * @param workbook The workbook from where the default steps will be read
-	 * @return ArrayList(Test Steps)
-	 */
-	private static ArrayList<ArrayList<String>> readDefaultSteps(Workbook workbook) {
-		
-		// Local Variables
-		ArrayList<ArrayList<String>> defaultSteps = new ArrayList<ArrayList<String>>();
-		
-		// Read and define 'Before' work sheet
-		Sheet defaultStepsSheet = workbook.getSheet("before");
-		
-		if (defaultStepsSheet != null) {
-			
-			int numberOfRows = defaultStepsSheet.getRows();
-			
-			for (int i = 1; i < numberOfRows; i++) {
-				if(defaultStepsSheet.getCell(0,i).getContents().isEmpty() == false) {
-					ArrayList<String> temp = new ArrayList<String>();
-					
-					// Step Name
-					temp.add(defaultStepsSheet.getCell(0,i).getContents());
-					
-					// Locator Type
-					temp.add(defaultStepsSheet.getCell(1,i).getContents());
-					
-					// Locator Value
-					temp.add(defaultStepsSheet.getCell(2,i).getContents());
-					
-					// Action
-					temp.add(defaultStepsSheet.getCell(3,i).getContents());
-					
-					// Test Data
-					if (defaultStepsSheet.getCell(4,i).getContents().isEmpty() == false) {
-						temp.add(defaultStepsSheet.getCell(4,i).getContents());
-					} else {
-						temp.add("");
-					}
-					
-					defaultSteps.add(temp);
-					
-				}
-			}
-			
-		}
-
-		return defaultSteps; 
+		return execHash;
 	}
 	
 	/**
@@ -124,7 +67,7 @@ public class Reader {
 	 * @param workbook The workbook from where the test data will be read
 	 * @return HashMap (Test Data Name, Test Data Value)
 	 */
-	private static HashMap<String, String> readTestData(Workbook workbook) {
+	private static HashMap<String, String> readTestDataSheet(Workbook workbook) {
 		
 		// Local Variables
 		HashMap<String, String> testData = new HashMap<String, String>();
@@ -149,19 +92,18 @@ public class Reader {
 	}
 	
 	/**
-	 * This method reads the tests from data file, selects only the tests as per parameter 'tests' and returns a HashMap with Module Name as Key and Tests as Value.
-	 * @param workbook The workbook from where all the tests will be read.
-	 * @param moduleName The module name of the work sheet to read the tests from.
-	 * @param tests The list of tests that are to be executed.
+	 * This method reads all the tests from data file and returns a HashMap with Module Name as Key and Tests as Value.
+	 * @param workbook [WorkBook] The workbook from where all the tests will be read.
+	 * @param sheetNumber [int] The index of the sheet in the workbook
 	 * @return HashMap(Module Name, List of Tests (Test Steps))
 	 */
-	private static HashMap<String, ArrayList<ArrayList<String>>> readTests(Workbook workbook, String moduleName, ArrayList<String> tests) {
+	private static HashMap<String, ArrayList<ArrayList<String>>> readSheet(Workbook workbook, int sheetNumber) {
 		
 		// Local Variables
-		HashMap<String, ArrayList<ArrayList<String>>> moduleTests = new HashMap<String, ArrayList<ArrayList<String>>>();
+		HashMap<String, ArrayList<ArrayList<String>>> moduleContents = new HashMap<String, ArrayList<ArrayList<String>>>();
 		
 		// Read and define 'Test Data' work sheet
-		Sheet moduleSheet = workbook.getSheet(moduleName);
+		Sheet moduleSheet = workbook.getSheet(sheetNumber);
 		
 		if (moduleSheet != null) {
 
@@ -169,75 +111,54 @@ public class Reader {
 
 			for (int i = 1; i < numberOfRows; i++) {
 				
-				if((moduleSheet.getCell(0,i).getContents().isEmpty() == false) && (tests.contains(moduleSheet.getCell(0,i).getContents()) == true)) {
+				if(moduleSheet.getCell(0,i).getContents().isEmpty() == false)  {
 					
 					String testName = moduleSheet.getCell(0,i).getContents();
 					
-					if (moduleTests.containsKey(testName) == false ) {
+					if (moduleContents.containsKey(testName) == false ) {
 						
 						// Put empty list for test name
-						moduleTests.put(testName, new ArrayList<ArrayList<String>>());
+						moduleContents.put(testName, new ArrayList<ArrayList<String>>());
 						
-						ArrayList<String> temp = new ArrayList<String>();
+					} 
 						
-						// Test Step Name, Locator Type, Locator Value, Action, Test Data
-						temp.add(moduleSheet.getCell(1,i).getContents());
-						temp.add(moduleSheet.getCell(2,i).getContents());
-						temp.add(moduleSheet.getCell(3,i).getContents());
-						temp.add(moduleSheet.getCell(4,i).getContents());
-						if (moduleSheet.getCell(5,i).getContents().isEmpty() == false) {
-							temp.add(moduleSheet.getCell(5,i).getContents());
-						} else {
-							temp.add("");
-						}
+					ArrayList<ArrayList<String>> testArray = (ArrayList<ArrayList<String>>) moduleContents.get(testName);
 						
-						ArrayList<ArrayList<String>> testArray = (ArrayList<ArrayList<String>>) moduleTests.get(testName);
+					ArrayList<String> temp = new ArrayList<String>();
 						
-						testArray.add(temp);
-						
-						moduleTests.put(testName, testArray);
-						
+					// Test Step Name, Locator Type, Locator Value, Action, Test Data
+					temp.add(moduleSheet.getCell(1,i).getContents());
+					temp.add(moduleSheet.getCell(2,i).getContents());
+					temp.add(moduleSheet.getCell(3,i).getContents());
+					temp.add(moduleSheet.getCell(4,i).getContents());
+					if (moduleSheet.getCell(5,i).getContents().isEmpty() == false) {
+						temp.add(moduleSheet.getCell(5,i).getContents());
 					} else {
-						
-						ArrayList<ArrayList<String>> testArray = (ArrayList<ArrayList<String>>) moduleTests.get(testName);
-						
-						ArrayList<String> temp = new ArrayList<String>();
-						
-						// Test Step Name, Locator Type, Locator Value, Action, Test Data
-						temp.add(moduleSheet.getCell(1,i).getContents());
-						temp.add(moduleSheet.getCell(2,i).getContents());
-						temp.add(moduleSheet.getCell(3,i).getContents());
-						temp.add(moduleSheet.getCell(4,i).getContents());
-						if (moduleSheet.getCell(5,i).getContents().isEmpty() == false) {
-							temp.add(moduleSheet.getCell(5,i).getContents());
-						} else {
-							temp.add("");
-						}
-						
-						testArray.add(temp);
-						
-						moduleTests.put(testName, testArray);
+						temp.add("");
 					}
+						
+					testArray.add(temp);
+						
+					moduleContents.put(testName, testArray);
+					
 				}
 			}
 		}
 		
-		return moduleTests;
+		return moduleContents;
 		
 	}
 	
 	
 	/**
-	 * This method reads the data files and extracts the configuration settings, the execution manager settings, the test data and the test steps to be executed.
+	 * This method reads the data files and extracts the configuration settings, the execution manager settings, the test cases and the test data.
 	 * @param filename The data file name from where the settings will be extracted.
 	 * @return HashMap(Setting Name, Setting Data) - Refer individual result type for details.
 	 * @setting_name config, default_steps, test_data, tests 
-	 * @Setting_data Config data, Default Steps Data, Test Data, Tests (Test Steps)
+	 * @setting_data Config data, Default Steps Data, Test Data, Tests (Test Steps)
 	 * @throws BiffException
 	 * @throws IOException
 	 */
-
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static HashMap<String, Object> read(String filename) throws BiffException, IOException {
 		
 		// Variables 
@@ -247,9 +168,6 @@ public class Reader {
 		
 		HashMap<String, ArrayList<String>> execManagerHash = new HashMap<String, ArrayList<String>>();
 		
-		ArrayList<ArrayList<String>> defaultSteps = new ArrayList<ArrayList<String>>();
-		
-		
 		Logger.separator();
 		
 		Workbook workbook = Workbook.getWorkbook(new File("resources/data/" + filename + ".xls"));
@@ -258,29 +176,20 @@ public class Reader {
 		
 		Logger.separator();
 		
-		String[] configs = readConfig(workbook);
+		String[] configs = readConfigSheet(workbook);
 		
 		System.out.println("URL                       : " + configs[0]);
 		System.out.println("Driver Type               : " + configs[1].toUpperCase());
-		System.out.println("Default Steps?            : " + configs[2].toUpperCase());
 		
 		results.put("config", configs);
 		
-		execManagerHash = readExecutionManager(workbook);
+		execManagerHash = readExecutionManagerSheet(workbook);
+		
+		results.put("exec_manager", execManagerHash);
 		
 		System.out.println("Total modules found       : " + execManagerHash.size());
 		
-		if (configs[2].equalsIgnoreCase("Y") == true) {
-
-			defaultSteps = readDefaultSteps(workbook);
-		
-			System.out.println("Number of default steps   : " + defaultSteps.size());
-			
-			results.put("default_steps", defaultSteps);
-			
-		}
-		
-		testData = readTestData(workbook);
+		testData = readTestDataSheet(workbook);
 		
 		System.out.println("Number of test data       : " + testData.size());
 		
@@ -289,17 +198,13 @@ public class Reader {
 		Logger.separator();
 		
 		// Get entries of tests to be executed
-		Set<?> set = execManagerHash.entrySet();
 		
-		Iterator<?> i = set.iterator();
-		while(i.hasNext()) {
-			Map.Entry<String,ArrayList<String>> me = (Map.Entry<String,ArrayList<String>>)i.next();
+		for (int j = 3; j < workbook.getNumberOfSheets(); j++) {
 			// Read test for a module and put into Execution Hash
-			executionHash.put(me.getKey().toString(), readTests(workbook, me.getKey().toString(), (ArrayList)me.getValue()));
+			executionHash.put(workbook.getSheet(j).getName(), readSheet(workbook, j));
 		}
 		
 		// Return final Hash
-		
 		results.put("tests", executionHash);
 		
 		return results;

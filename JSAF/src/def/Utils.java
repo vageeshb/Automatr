@@ -1,7 +1,11 @@
 package def;
 
 import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 	public class Utils {
@@ -45,4 +49,22 @@ import java.util.regex.Pattern;
 			    theDir.mkdir();  
 			}
 		}
+		
+		/**
+		 * This method tells the difference in time between to date strings
+		 * @param format The format of the string
+		 * @param start Start Date
+		 * @param end End Date
+		 * @param timeunit Time Unit
+		 * @return Long
+		 * @throws ParseException
+		 */
+		public static long timeDifference(String format, String start, String end, TimeUnit timeunit) throws ParseException {
+			
+			Date date1 = new SimpleDateFormat(format).parse(start);
+			Date date2 = new SimpleDateFormat(format).parse(end);
+			long diffInMillies = date2.getTime() - date1.getTime();
+			return timeunit.convert(diffInMillies,TimeUnit.MILLISECONDS);
+		}
+		
 }

@@ -1,4 +1,4 @@
-package executor;
+package exec;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -24,12 +24,14 @@ import def.Selenium;
  * @author VAGEESH BHASIN
  * @version 0.0.1
  */
-public class Execute {
+public class Executor {
 	private static HashMap<String, String> testData;
-	private static ArrayList<ArrayList<String>> defaultSteps;
 	private static String[] config;
+	@SuppressWarnings("rawtypes")
+	private static HashMap allTestsHash;
 	private static WebDriver driver;
 	private static String currentModule;
+	private static String currentTest;
 	private static HashMap<String, HashMap<String, ArrayList<String[]>>> status = new HashMap<String, HashMap<String, ArrayList<String[]>>>();
 	
 	/**
@@ -46,9 +48,10 @@ public class Execute {
 	/**
 	 * This method executes a test step either by finding an element and performing action or by assertion.
 	 * @param testStep Should contain [Step Name, Locator Type, Locator Value, Action, Data Value]
+	 * @throws IOException 
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static String[] executeTestStep(Object testStep) {
+	private static String[] executeTestStep(Object testStep) throws IOException {
 		
 		// Convert testStep to ArrayList to String Array
 		ArrayList temp = (ArrayList)testStep;
@@ -64,6 +67,14 @@ public class Execute {
 		// Check to see if test data name is used
 		String value = (String) testData.get(step[4]);
 		
+		// Run another self contained test as a part of this test
+		if(step[3].equalsIgnoreCase("run")) {
+			ArrayList<String[]> test = (ArrayList<String[]>)((HashMap)allTestsHash.get(step[1])).get(step[2]);
+			status.put(currentModule, executeTest(currentTest, test, true));
+			stepStatus[1] = "PASS";
+			stepStatus[3] = now("dd/MM/yyyy HH:mm:ss");
+			return stepStatus;
+		}
 		// Find web element
 		Object e = Selenium.find(driver, step[1], step[2]);
 		
@@ -101,80 +112,40 @@ public class Execute {
 	/**
 	 * This method takes in a hash of tests and passes each test step to method 'executeTestStep'
 	 * @param moduleName The name of the current module
-	 * @param tests HashMap with Test Name as Key and Test Steps as Value.
+	 * @param test HashMap with Test Name as Key and Test Steps as Value.
 	 * @throws IOException 
 	 * @returns HashMap with Test Name as Key and Test Step Status Array as Values.
 	 */
 	@SuppressWarnings("rawtypes")
-	private static HashMap<String, ArrayList<String[]>> executeTests(HashMap tests) throws IOException {
+	private static HashMap<String, ArrayList<String[]>> executeTest(String testName, ArrayList test, boolean flag) throws IOException {
 		
 		// Variables
 		HashMap<String, ArrayList<String[]>> testStatus = new HashMap<String, ArrayList<String[]>>();
 		
-		// Extract test name and test steps
-		Set set = tests.entrySet();
-		Iterator i = set.iterator();
-		while(i.hasNext()) {
+		currentTest = testName;
+		
+		// Initialize driver if called from parent module
+		if(flag == false) driver = Selenium.initDriver(config[0], config[1]);
+		
+		ArrayList<String[]> temp = new ArrayList<String[]>();
+		
+		for(Object testStep: test) {
 			
-			Map.Entry me = (Map.Entry)i.next();
-			
-			// Initialize driver
-			driver = Selenium.initDriver(config[0], config[1]);
-			
-			System.out.print(" ");
-			
-			ArrayList test = (ArrayList)me.getValue();
-			
-			ArrayList<String[]> temp = new ArrayList<String[]>();
-			
-			// Execute Default steps first, if present
-			if (defaultSteps.isEmpty() == false) {
-				for (Object step : defaultSteps) {
-					
-					String[] testStepResults = executeTestStep(step);
-					
-					// Take screenshot if test step failed
-					if (testStepResults[1].contains("FAIL")) {
-						String tempFileName = currentModule + "_" + me.getKey().toString() + "_" + testStepResults[0] + "_error.png"; 
-						Selenium.screenshot(driver, tempFileName);
-					}
-					
-					temp.add(testStepResults);
-				}
-				for (Object testStep : test) {
-					
-					String[] testStepResults = executeTestStep(testStep);
-					
-					// Take screenshot if test step failed
-					if (testStepResults[1].contains("FAIL")) {
-						String tempFileName = currentModule + "_" + me.getKey().toString() + "_" + testStepResults[0] + "_error.png"; 
-						Selenium.screenshot(driver, tempFileName);
-					}
-					
-					temp.add(testStepResults);
-				}
-			} 
-			// Default steps not present, directly run test steps
-			else {
-				for (Object testStep : test) {
-					
-					String[] testStepResults = executeTestStep(testStep);
-					
-					// Take screenshot if test step failed
-					if (testStepResults[1].contains("FAIL")) {
-						String tempFileName = currentModule + "_" + me.getKey().toString() + "_" + testStepResults[0] + "_error.png"; 
-						Selenium.screenshot(driver, tempFileName);
-					}
-					
-					temp.add(testStepResults);
-				}
+			String[] testStepResults = executeTestStep(testStep);
+				
+			// Take screenshot if test step failed
+			if (testStepResults[1].contains("FAIL")) {
+				String tempFileName = currentModule + "_" + testName + "_" + testStepResults[0] + "_error.png"; 
+				Selenium.screenshot(driver, tempFileName);
 			}
-			
-			testStatus.put((String)me.getKey(), temp);
-			
-			// Close driver
-			driver.close();
+			temp.add(testStepResults);
 		}
+		
+		testStatus.put(testName, temp);
+			
+		// Close driver if called from parent module
+		if(flag == false) driver.close();
+		
 		
 		return testStatus;
 	}
@@ -182,39 +153,49 @@ public class Execute {
 	/**
 	 * This method performs the whole execution of tests using the config, exection hash, test data and default steps.
 	 * @param config The configuration settings.
-	 * @param executionHash The execution hash with Module Name as Key and Tests as Values.
+	 * @param testsHash The execution hash with Module Name as Key and Tests as Values.
 	 * @param testData The test data to be used.
 	 * @param defaultSteps The default steps to be executed before each test.
 	 * @return HashMap with Module Name as Key and Test Case Result HashMap as Values.
 	 * @throws IOException 
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap executionHash, HashMap testData, ArrayList defaultSteps) throws IOException {
-		Set set = executionHash.entrySet();
+	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap execManagerHash, HashMap testsHash, HashMap testData) throws IOException {
+		
+		// Run only the tests as defined in execution manager hash
+		Set set = execManagerHash.entrySet();
 		Iterator i = set.iterator();
 		
 		// Set class variables
 		setConfig(config);
 		setTestData(testData);
-		setDefaultSteps(defaultSteps);
+		setallTestsHash(testsHash);
 		
 		// Perform Execution Module-wise
 		while(i.hasNext()) {
 			
-			// Extract tests from this module
+
 			Map.Entry me = (Map.Entry)i.next();
-			HashMap tests = (HashMap) me.getValue();
+			
+			Logger.separator();
+
+			// Extract module name and tests to be run
+			String moduleName = me.getKey().toString();
+			ArrayList<String> tests = (ArrayList<String>)me.getValue();
+			
+			System.out.println("Executing Module: " + moduleName);
+			currentModule = moduleName;
+			
+			for (String test : tests) {
+				
+				// Get test steps of this test
+				ArrayList testSteps = (ArrayList)((HashMap)testsHash.get(moduleName)).get(test);
+				
+				status.put(moduleName, executeTest(test, testSteps, false));
+			}
 			
 			Logger.separator();
 			
-			System.out.println("Executing Module: " + me.getKey().toString());
-			
-			currentModule = me.getKey().toString();
-			
-			Logger.separator();
-			
-			// Execute tests of this module
-			status.put(me.getKey().toString(), executeTests(tests));
 		}
 		
 		return status;
@@ -225,13 +206,7 @@ public class Execute {
 		return testData;
 	}
 	private static void setTestData(HashMap<String, String> testDataList) {
-		Execute.testData = testDataList;
-	}
-	public static ArrayList<?> getDefaultSteps() {
-		return defaultSteps;
-	}
-	private static void setDefaultSteps(ArrayList<ArrayList<String>> defaultStepsList) {
-		Execute.defaultSteps = defaultStepsList;
+		Executor.testData = testDataList;
 	}
 
 	public static String[] getConfig() {
@@ -239,6 +214,16 @@ public class Execute {
 	}
 
 	private static void setConfig(String[] config) {
-		Execute.config = config;
+		Executor.config = config;
+	}
+
+	@SuppressWarnings("rawtypes")
+	public static HashMap getallTestsHash() {
+		return allTestsHash;
+	}
+
+	@SuppressWarnings("rawtypes")
+	private static void setallTestsHash(HashMap allTestsHash) {
+		Executor.allTestsHash = allTestsHash;
 	}
 }

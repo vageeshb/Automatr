@@ -1,9 +1,10 @@
-package reporter;
+package report;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 
@@ -25,7 +27,7 @@ import def.Utils;
  * @author VAGEESH BHASIN
  * @version 0.0.1
  */
-public class HtmlReport {
+public class HTMLReporter {
 	// Class Variables
 	private static String reportContent = "";
 	private static String filename = "";
@@ -146,9 +148,10 @@ public class HtmlReport {
 	/**
 	 * This method writes the test details of each module, including test name, test step name and status.
 	 * @param hashMap The HashMap contains each module test details
+	 * @throws ParseException 
 	 */
 	@SuppressWarnings({ "unchecked" })
-	private static String detailTab(HashMap<?, ?> hashMap) {
+	private static String detailTab(HashMap<?, ?> hashMap) throws ParseException {
 		boolean flag = true;
 		String temp = 	"<div class='tab-pane' id='details'>"
 					+ 	"	<div class='panel panel-default'>"
@@ -192,6 +195,7 @@ public class HtmlReport {
         			+ 	"								<th>Status</th>\n"
         			+	"								<th>Start Time</th>\n"
         			+ 	"								<th>End Time</th>\n"
+        			+   "								<th>Duration (in MilliSeconds)</th>\n"
         			+ 	"							</tr>"
         			+ 	"						</thead>"
         			+	"						<tbody>";
@@ -209,7 +213,8 @@ public class HtmlReport {
 						temp +=	"								<td>" + steps[j] + "</td>";
 					}
 				}
-				temp += "							</tr>\n";
+				temp += "										<td>" + Utils.timeDifference("dd/MM/yyyy HH:mm:ss:ms", steps[3], steps[4], TimeUnit.SECONDS) + "</td>\n" 
+					 +	"							</tr>\n";
 			}
 				
         	temp 	+=	"						</tbody>"
@@ -266,8 +271,9 @@ public class HtmlReport {
 	/**
 	 * This method uses all the other method to fill the report.
 	 * @param results The results HashMap contains data to be provided to other functions.
+	 * @throws ParseException 
 	 */
-	private static void fillReport(HashMap<?,?> results) {
+	private static void fillReport(HashMap<?,?> results) throws ParseException {
 		
 		reportContent += "<html>\n"
 				+ header()
@@ -346,8 +352,9 @@ public class HtmlReport {
 	 * This method takes in the necessary HashMap to generate the sections of report.
 	 * @param testExecutionResult A HashMap with (summary, modules, details) as Key and (Summary details, Module Details, Test Details) as Values.
 	 * @throws IOException
+	 * @throws ParseException 
 	 */
-	public static void generate(HashMap<String, ?> testExecutionResult) throws IOException {
+	public static void generate(HashMap<String, ?> testExecutionResult) throws IOException, ParseException {
 		setFilename();
 		fillReport(testExecutionResult);
 		createReport();
@@ -367,6 +374,6 @@ public class HtmlReport {
 	private static void setFilename() {
 		DateFormat fileFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
 		Date date = new Date();
-		HtmlReport.filename = fileFormat.format(date).toString();
+		HTMLReporter.filename = fileFormat.format(date).toString();
 	}
 }

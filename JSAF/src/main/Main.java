@@ -1,6 +1,7 @@
 package main;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,8 +11,8 @@ import java.util.Set;
 import def.Logger;
 import def.Utils;
 import parser.Reader;
-import reporter.HtmlReport;
-import executor.Execute;
+import report.HTMLReporter;
+import exec.Executor;
 import jxl.read.biff.BiffException;
 
 public class Main {
@@ -107,11 +108,12 @@ public class Main {
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static void main(String[] args) throws BiffException, IOException {
+	public static void main(String[] args) throws BiffException, IOException, ParseException {
 		
 		HashMap<String, Object> readResult = Reader.read("1");
 		
-		HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Execute.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("test_data"), (ArrayList)readResult.get("default_steps"));
+		
+		HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("test_data"));
 		
 		HashMap reportFormattedData = convertResultToReportFormat(testExecutionResult);
 		
@@ -119,7 +121,7 @@ public class Main {
 		
 		System.out.println("Execution Completed.\n\nGenerating test result report.");
 		
-		HtmlReport.generate(reportFormattedData);
+		HTMLReporter.generate(reportFormattedData);
 	}
 
 }
