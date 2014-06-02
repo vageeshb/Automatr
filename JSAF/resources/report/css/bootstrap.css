@@ -34,6 +34,9 @@ video {
   display: inline-block;
   vertical-align: baseline;
 }
+#fail-error-msg {
+  text-decoration: underline;
+}
 audio:not([controls]) {
   display: none;
   height: 0;
@@ -308,6 +311,7 @@ img {
 .img-responsive {
   max-width: 100%;
   height: auto;
+  border: 1px solid black;
 }
 hr {
   margin-top: 20px;

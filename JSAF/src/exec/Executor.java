@@ -32,6 +32,7 @@ public class Executor {
 	private static WebDriver driver;
 	private static String currentModule;
 	private static String currentTest;
+	private static HashMap<String, ArrayList<String[]>> testStatuses;
 	private static HashMap<String, HashMap<String, ArrayList<String[]>>> status = new HashMap<String, HashMap<String, ArrayList<String[]>>>();
 	
 	/**
@@ -42,71 +43,170 @@ public class Executor {
 	private static String now(String formatType) {
 		DateFormat dateFormat = new SimpleDateFormat(formatType);
 		Date date = new Date();
-		return dateFormat.format(date) + ":" + System.currentTimeMillis() % 1000;
+		return dateFormat.format(date);
 	}
 	
 	/**
 	 * This method executes a test step either by finding an element and performing action or by assertion.
 	 * @param testStep Should contain [Step Name, Locator Type, Locator Value, Action, Data Value]
 	 * @throws IOException 
+	 * @throws InterruptedException 
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static String[] executeTestStep(Object testStep) throws IOException {
+	private static String[] executeTestStep(Object testStep) throws IOException, InterruptedException {
 		
 		// Convert testStep to ArrayList to String Array
 		ArrayList temp = (ArrayList)testStep;
 		String [] step = (String[]) temp.toArray(new String[temp.size()]);
 		
 		String[] actionResult = new String[2];
-		String[] stepStatus = new String[4];
+		String[] stepResult = new String[4];
+		
+		Object element;
+		String stepAction;
+		String stepDataValue;
 		
 		// Initialize Status
-		stepStatus[0] = step[0];
-		stepStatus[2] = now("dd/MM/yyyy HH:mm:ss");
+		stepResult[0] = step[0];
+		stepResult[2] = now("dd/MM/yyyy HH:mm:ss:S");
 		
-		// Check to see if test data name is used
-		String value = (String) testData.get(step[4]);
+		// Get action type
+		if(step[3] != null) 
+			stepAction = step[3];
+		else
+			stepAction = null;
 		
-		// Run another self contained test as a part of this test
-		if(step[3].equalsIgnoreCase("run")) {
-			ArrayList<String[]> test = (ArrayList<String[]>)((HashMap)allTestsHash.get(step[1])).get(step[2]);
-			status.put(currentModule, executeTest(currentTest, test, true));
-			stepStatus[1] = "PASS";
-			stepStatus[3] = now("dd/MM/yyyy HH:mm:ss");
-			return stepStatus;
-		}
-		// Find web element
-		Object e = Selenium.find(driver, step[1], step[2]);
+		// Get Test Data value, if found in Test_Data hash
+		if( (String) testData.get(step[4]) != null)
+			stepDataValue = (String) testData.get(step[4]);
+		else
+			stepDataValue = step[4];
 		
-		// Check to see if element was found, if found return was a WebElement, else it was assertion step
-		if(e.getClass().getSimpleName().equalsIgnoreCase("string")) {
+		
+		switch(stepAction.toLowerCase()) {
+
+			// Run another self contained test as a part of this test
+			case "run":
+				// Get contained test and its test steps
+				HashMap containedTest = (HashMap)allTestsHash.get(step[1]);
+				ArrayList<String[]> containedTestSteps = (ArrayList<String[]>)(containedTest).get(step[2]);
+				try {
+					if(stepDataValue != null && Integer.parseInt(stepDataValue) == -1)
+						containedTestSteps.remove(containedTestSteps.size() -1 );
+				} catch (Exception e) {}
+				executeTest(currentTest, containedTestSteps, false).get(currentTest);
+				
+				return null;
 			
-			// Perform assertion step
-			if (value != null) {
-				actionResult = Selenium.action((String)e, step[3], value);
-			} else {
-				actionResult = Selenium.action((String)e, step[3], step[4]);
-			}
-		} else {
-			// Perform action step
-			if (value != null) {
-				actionResult = Selenium.action((WebElement)e, step[3], value);
-			} else {
-				actionResult = Selenium.action((WebElement)e, step[3], step[4]);
-			}
+			// Assertion step
+			case "assert":
+				// Find web element
+				element = Selenium.find(driver, step[1], step[2]);
+				
+				// Element not found
+				if(element == null){
+					actionResult = Selenium.action(null, step[1], stepAction, stepDataValue);
+				}
+				// Element was a string
+				else if (element.getClass().getSimpleName().equalsIgnoreCase("string")) {
+					actionResult = Selenium.action(null, (String)element, stepAction, stepDataValue);
+				}
+				// Element exists
+				else {
+					actionResult = Selenium.action(null, (WebElement)element, stepAction, stepDataValue);
+				}
+				break;
+				
+			// JAVASCRIPT
+			case "javascript":
+				actionResult = Selenium.action(driver, null, stepAction, stepDataValue);
+				break;
+				
+			// Wait
+			case "wait":
+				Thread.sleep(Integer.parseInt(step[4]) * 100);
+				actionResult[0] = ".";
+				break;
+				
+			// Closing Driver
+			case "close":
+				driver.close();
+				driver = null;
+				actionResult[0] = ".";
+				break;
+			
+			// Open and get URL
+			case "open/get":
+				driver = Selenium.initDriver(stepDataValue, config[1]);
+				actionResult[0] = ".";
+				break;
+				
+			// Open Browser
+			case "open":
+				driver = Selenium.initDriver(null, config[1]);
+				actionResult[0] = ".";
+				break;
+				
+			// Get URL
+			case "get":
+				driver.get(stepDataValue);
+				actionResult[0] = ".";
+				break;
+			// Web Element Related - Negative
+			case "isnotdisplayed":
+			case "isnotpresent":
+				// Find web element
+				element = Selenium.find(driver, step[1], step[2]);
+				
+				// Element not found, success
+				if(element == null) {
+					actionResult[0] = ".";
+				}
+				// Element found, check for displayed property
+				else {
+					actionResult = Selenium.action(null, (WebElement)element, stepAction, stepDataValue);
+				}
+				break;
+			// Web Element Related - Positive
+			case "isdisplayed":
+			case "ispresent":
+			case "click":
+			case "input":
+			case "hover":
+				// Find web element
+				element = Selenium.find(driver, step[1], step[2]);
+
+				// Element not found
+				if (element == null) {
+					String[] x = {"F", "Could not locate element with { &#39;" + step[1] + "&#39; = &#39;" + step[2] + "&#39; }."};
+					actionResult = x;
+				}
+				// Element was found
+				else if(element.getClass().getSimpleName().equalsIgnoreCase("RemoteWebElement")){
+					// Perform action step
+					actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
+				} else {
+					String[] x = {"F", "There is a problem at this step. Could not identify the element type."};
+					actionResult = x;
+				}
+				break;
+			default:
+				String[] x = {"F", "There is a problem at this step. Could not identify the element type."};
+				actionResult = x;
+				break;
 		}
 		
 		if (actionResult[0].equalsIgnoreCase(".")) {
 			System.out.print(".");
-			stepStatus[1] = "PASS";
+			stepResult[1] = "PASS";
 		} else {
 			System.out.print("F");
-			stepStatus[1] = "FAIL: " + actionResult[1];
+			stepResult[1] = "FAIL: " + actionResult[1];
 		}
 		
-		stepStatus[3] = now("dd/MM/yyyy HH:mm:ss");
+		stepResult[3] = now("dd/MM/yyyy HH:mm:ss:SS");
 		
-		return stepStatus;
+		return stepResult;
 	}
 	
 	/**
@@ -114,40 +214,40 @@ public class Executor {
 	 * @param moduleName The name of the current module
 	 * @param test HashMap with Test Name as Key and Test Steps as Value.
 	 * @throws IOException 
+	 * @throws InterruptedException 
 	 * @returns HashMap with Test Name as Key and Test Step Status Array as Values.
 	 */
 	@SuppressWarnings("rawtypes")
-	private static HashMap<String, ArrayList<String[]>> executeTest(String testName, ArrayList test, boolean flag) throws IOException {
+	private static HashMap<String, ArrayList<String[]>> executeTest(String testName, ArrayList test, boolean openDriver) throws IOException, InterruptedException {
 		
-		// Variables
-		HashMap<String, ArrayList<String[]>> testStatus = new HashMap<String, ArrayList<String[]>>();
-		
+		// Set Current Test
 		currentTest = testName;
 		
 		// Initialize driver if called from parent module
-		if(flag == false) driver = Selenium.initDriver(config[0], config[1]);
-		
-		ArrayList<String[]> temp = new ArrayList<String[]>();
+		if(openDriver == true) driver = Selenium.initDriver(config[0], config[1]);
 		
 		for(Object testStep: test) {
 			
-			String[] testStepResults = executeTestStep(testStep);
+			String[] testStepResult = executeTestStep(testStep);
+			
+			// If self contained test was not run, add status
+			if(testStepResult != null) {
+				// Take screenshot if test step failed				
+				if (testStepResult[1].contains("FAIL")) {
+					String tempFileName = currentModule + "_" + testName + "_" + testStepResult[0] + "_error.png"; 
+					Selenium.screenshot(driver, tempFileName);
+				}
 				
-			// Take screenshot if test step failed
-			if (testStepResults[1].contains("FAIL")) {
-				String tempFileName = currentModule + "_" + testName + "_" + testStepResults[0] + "_error.png"; 
-				Selenium.screenshot(driver, tempFileName);
+				if(testStatuses.get(currentTest) == null) testStatuses.put(currentTest, new ArrayList<String[]>());
+
+				testStatuses.get(currentTest).add(testStepResult);
 			}
-			temp.add(testStepResults);
 		}
-		
-		testStatus.put(testName, temp);
 			
 		// Close driver if called from parent module
-		if(flag == false) driver.close();
+		if(openDriver == true) driver.close();
 		
-		
-		return testStatus;
+		return testStatuses;
 	}
 	
 	/**
@@ -158,9 +258,10 @@ public class Executor {
 	 * @param defaultSteps The default steps to be executed before each test.
 	 * @return HashMap with Module Name as Key and Test Case Result HashMap as Values.
 	 * @throws IOException 
+	 * @throws InterruptedException 
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap execManagerHash, HashMap testsHash, HashMap testData) throws IOException {
+	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap execManagerHash, HashMap testsHash, HashMap testData) throws IOException, InterruptedException {
 		
 		// Run only the tests as defined in execution manager hash
 		Set set = execManagerHash.entrySet();
@@ -184,15 +285,30 @@ public class Executor {
 			ArrayList<String> tests = (ArrayList<String>)me.getValue();
 			
 			System.out.println("Executing Module: " + moduleName);
+			
 			currentModule = moduleName;
 			
+			// Initialize Test Statuses for this module
+			testStatuses = new HashMap<String, ArrayList<String[]>>();
+			
 			for (String test : tests) {
+				
+				System.out.print(" ");
+				// Initialize before execution
+				if(status.get(moduleName) == null) {
+					HashMap<String, ArrayList<String[]>> tempTestHash = new HashMap<String, ArrayList<String[]>>();
+					tempTestHash.put(test, new ArrayList<String[]>());
+					status.put(moduleName, tempTestHash);
+				} 
 				
 				// Get test steps of this test
 				ArrayList testSteps = (ArrayList)((HashMap)testsHash.get(moduleName)).get(test);
 				
-				status.put(moduleName, executeTest(test, testSteps, false));
+				executeTest(test, testSteps, true);
+				
 			}
+			
+			status.put(moduleName, testStatuses);
 			
 			Logger.separator();
 			

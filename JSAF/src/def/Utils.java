@@ -67,4 +67,11 @@ import java.util.regex.Pattern;
 			return timeunit.convert(diffInMillies,TimeUnit.MILLISECONDS);
 		}
 		
+		public static String strConcat(String[] input, int start, int end) {
+			String temp = "";
+			for (int i = start; i <= end; i++) {
+				temp += input[i] + " ";
+			}
+			return temp;
+		}
 }

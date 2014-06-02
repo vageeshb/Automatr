@@ -83,24 +83,32 @@ public class HTMLReporter {
 				+ 	"					<td>" + filename + "</td>\n"
 				+ 	"				</tr>\n"
 				+ 	"				<tr>\n"
-				+ 	"					<td class='info'><strong>Modules</strong></td>\n"
+				+ 	"					<td class='info'><strong>URL</strong></td>\n"
 				+ 	"					<td>" + summary[0] + "</td>\n"
+				+	"				</tr>\n"	
+				+ 	"				<tr>\n"
+				+ 	"					<td class='info'><strong>Driver Type</strong></td>\n"
+				+ 	"					<td>" + summary[1] + "</td>\n"
+				+	"				</tr>\n"
+				+ 	"				<tr>\n"
+				+ 	"					<td class='info'><strong>Modules</strong></td>\n"
+				+ 	"					<td>" + summary[2] + "</td>\n"
 				+ 	"				</tr>\n"
                 + 	"				<tr>\n"
                 + 	"					<td class='info'><strong>Tests Executed</strong></td>\n"
-                + 	"					<td>" + summary[1] + "</td>\n"
-                + 	"				</tr>\n"
-                + 	"				<tr>\n"
-                + 	"					<td class='info'><strong>Tests Steps Executed</strong></td>\n"
-                + 	"					<td>" + summary[2] + "</td>\n"
-                + 	"				</tr>\n"
-                + 	"				<tr>\n"
-                + 	"					<td class='success'><strong>Passed</strong></td>\n"
                 + 	"					<td>" + summary[3] + "</td>\n"
                 + 	"				</tr>\n"
                 + 	"				<tr>\n"
-                + 	"					<td class='danger'><strong>Failed</strong></td>\n"
+                + 	"					<td class='info'><strong>Tests Steps Executed</strong></td>\n"
                 + 	"					<td>" + summary[4] + "</td>\n"
+                + 	"				</tr>\n"
+                + 	"				<tr>\n"
+                + 	"					<td class='success'><strong>Passed</strong></td>\n"
+                + 	"					<td>" + summary[5] + "</td>\n"
+                + 	"				</tr>\n"
+                + 	"				<tr>\n"
+                + 	"					<td class='danger'><strong>Failed</strong></td>\n"
+                + 	"					<td>" + summary[6] + "</td>\n"
                 + 	"				</tr>\n"
                 + 	"			</tbody>\n"
                 + 	"	</table>\n"
@@ -190,12 +198,12 @@ public class HTMLReporter {
 			temp	+= 	"					<table class='table table-bordered table-hover'>"
         			+ 	"						<thead>"
         			+ 	"							<tr class='info'>"
-        			+ 	"								<th>Test Case Name</th>"
-        			+ 	"								<th>Test Step Name</th>"
+        			+ 	"								<th>Test Name</th>"
+        			+ 	"								<th>Test Step Description</th>"
         			+ 	"								<th>Status</th>\n"
         			+	"								<th>Start Time</th>\n"
         			+ 	"								<th>End Time</th>\n"
-        			+   "								<th>Duration (in MilliSeconds)</th>\n"
+        			+   "								<th>Duration <br/>(in Seconds)</th>\n"
         			+ 	"							</tr>"
         			+ 	"						</thead>"
         			+	"						<tbody>";
@@ -208,12 +216,13 @@ public class HTMLReporter {
 				}
 				for (int j = 0; j < steps.length; j++) {
 					if(j==2 && steps[j].contains("FAIL")) {
-						temp +=	"								<td><a class='show-modal' href='" + moduleName.toLowerCase() + "_" + steps[0].toLowerCase() + "_" + steps[1].toLowerCase() + "_error.png'>" + steps[j] + "</a></td>";
+						String[] t = steps[j].split(":");
+						temp +=	"								<td><a class='show-modal' href='" + moduleName.toLowerCase() + "_" + steps[0].toLowerCase() + "_" + steps[1].toLowerCase() + "_error.png' data-msg = '" + Utils.strConcat(t, 1, t.length-1) + "'>" + steps[j].split(":")[0] + "</a></td>";
 					} else {
 						temp +=	"								<td>" + steps[j] + "</td>";
 					}
 				}
-				temp += "										<td>" + Utils.timeDifference("dd/MM/yyyy HH:mm:ss:ms", steps[3], steps[4], TimeUnit.SECONDS) + "</td>\n" 
+				temp += "										<td>" + Utils.timeDifference("dd/MM/yyyy HH:mm:ss:S", steps[3], steps[4], TimeUnit.MILLISECONDS)/(1000.00) + "</td>\n" 
 					 +	"							</tr>\n";
 			}
 				
@@ -242,6 +251,7 @@ public class HTMLReporter {
 				+ 	"			</div>\n"
 				+ 	"			<div class='modal-body'>\n"
 				+ 	"				<div class='text-center'>\n"
+				+   "					<h4 id='fail-error-msg'></h4>"
 				+ 	"					<img id='modal-image' src='' class='img-responsive'>\n"
 				+	"				</div>\n"
 				+ 	"			</div>\n"

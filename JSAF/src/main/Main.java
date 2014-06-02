@@ -17,6 +17,7 @@ import jxl.read.biff.BiffException;
 
 public class Main {
 	
+	private static String[] config;
 	/**
 	 * This method converts the Test Execution Results to the format used for report generation.
 	 * @param testExecutionResult A hashmap generated from running Execute.performExecution method.
@@ -98,7 +99,7 @@ public class Main {
 		}
 		
 		// Add Summary Entry into Hash
-		String[] summary = {Integer.toString(totalModuleCount), Integer.toString(totalTCCount), Integer.toString(totalTSCount),Integer.toString(totalTCPassed), Integer.toString(totalTCFailed)};
+		String[] summary = {config[0], config[1], Integer.toString(totalModuleCount), Integer.toString(totalTCCount), Integer.toString(totalTSCount),Integer.toString(totalTCPassed), Integer.toString(totalTCFailed)};
 		
 		results.put("summary", summary);
 		results.put("modules", moduleDetails);
@@ -108,12 +109,14 @@ public class Main {
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static void main(String[] args) throws BiffException, IOException, ParseException {
+	public static void main(String[] args) throws BiffException, IOException, ParseException, InterruptedException {
 		
-		HashMap<String, Object> readResult = Reader.read("1");
+		HashMap<String, Object> readResult = Reader.read("SR");
 		
 		
 		HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("test_data"));
+		
+		config = (String[])readResult.get("config");
 		
 		HashMap reportFormattedData = convertResultToReportFormat(testExecutionResult);
 		
