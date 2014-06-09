@@ -159,7 +159,7 @@ public class Reader {
 	 * @throws BiffException
 	 * @throws IOException
 	 */
-	public static HashMap<String, Object> read(String filename) throws BiffException, IOException {
+	public static HashMap<String, Object> read(File excelFile) throws BiffException, IOException {
 		
 		// Variables 
 		HashMap<String, Object> executionHash = new HashMap<String, Object>();
@@ -170,9 +170,9 @@ public class Reader {
 		
 		Logger.separator();
 		
-		Workbook workbook = Workbook.getWorkbook(new File("resources/data/" + filename + ".xls"));
+		Workbook workbook = Workbook.getWorkbook(excelFile);
 		
-		System.out.println("Parsing data file         : " + filename + ".xls");
+		System.out.println("Parsing data file         : " + excelFile.getName());
 		
 		Logger.separator();
 		

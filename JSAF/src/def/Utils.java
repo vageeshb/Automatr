@@ -1,6 +1,7 @@
 package def;
 
 import java.io.File;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -73,5 +74,15 @@ import java.util.regex.Pattern;
 				temp += input[i] + " ";
 			}
 			return temp;
+		}
+		/**
+		 * This method returns current date/time using the supplied format type.
+		 * @param formatType
+		 * @return Current Data/Time
+		 */
+		public static String now(String formatType) {
+			DateFormat dateFormat = new SimpleDateFormat(formatType);
+			Date date = new Date();
+			return dateFormat.format(date);
 		}
 }

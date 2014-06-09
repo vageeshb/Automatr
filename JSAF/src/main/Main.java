@@ -1,5 +1,6 @@
 package main;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -18,6 +19,8 @@ import jxl.read.biff.BiffException;
 public class Main {
 	
 	private static String[] config;
+	private static String startTime;
+	private static String endTime;
 	/**
 	 * This method converts the Test Execution Results to the format used for report generation.
 	 * @param testExecutionResult A hashmap generated from running Execute.performExecution method.
@@ -99,7 +102,7 @@ public class Main {
 		}
 		
 		// Add Summary Entry into Hash
-		String[] summary = {config[0], config[1], Integer.toString(totalModuleCount), Integer.toString(totalTCCount), Integer.toString(totalTSCount),Integer.toString(totalTCPassed), Integer.toString(totalTCFailed)};
+		String[] summary = {config[0], config[1], startTime, endTime, Integer.toString(totalModuleCount), Integer.toString(totalTCCount), Integer.toString(totalTSCount),Integer.toString(totalTCPassed), Integer.toString(totalTCFailed)};
 		
 		results.put("summary", summary);
 		results.put("modules", moduleDetails);
@@ -111,20 +114,34 @@ public class Main {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static void main(String[] args) throws BiffException, IOException, ParseException, InterruptedException {
 		
-		HashMap<String, Object> readResult = Reader.read("SR");
+		// Read filename
+		File excelFile = new File(args[0]);
 		
-		
-		HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("test_data"));
-		
-		config = (String[])readResult.get("config");
-		
-		HashMap reportFormattedData = convertResultToReportFormat(testExecutionResult);
-		
-		Logger.separator();
-		
-		System.out.println("Execution Completed.\n\nGenerating test result report.");
-		
-		HTMLReporter.generate(reportFormattedData);
+		// Check if the file exists
+		if (!excelFile.exists()) {
+		    System.out.println("Could not locate data file!");
+		    System.exit(-1);
+		} else {
+			// File exists, run program
+			
+			HashMap<String, Object> readResult = Reader.read(excelFile);
+			
+			startTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
+			
+			HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("test_data"));
+			
+			endTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
+			
+			config = (String[])readResult.get("config");
+			
+			HashMap reportFormattedData = convertResultToReportFormat(testExecutionResult);
+			
+			Logger.separator();
+			
+			System.out.println("Execution Completed.\n\nGenerating test result report.");
+			
+			HTMLReporter.generate(reportFormattedData);
+		}
 	}
 
 }

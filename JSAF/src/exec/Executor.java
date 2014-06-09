@@ -1,12 +1,10 @@
 package exec;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,6 +13,7 @@ import org.openqa.selenium.WebElement;
 
 import def.Logger;
 import def.Selenium;
+import def.Utils;
 
 /**
  * Selenium Automation Framework
@@ -36,17 +35,6 @@ public class Executor {
 	private static HashMap<String, HashMap<String, ArrayList<String[]>>> status = new HashMap<String, HashMap<String, ArrayList<String[]>>>();
 	
 	/**
-	 * This method returns current date/time using the supplied format type.
-	 * @param formatType
-	 * @return Current Data/Time
-	 */
-	private static String now(String formatType) {
-		DateFormat dateFormat = new SimpleDateFormat(formatType);
-		Date date = new Date();
-		return dateFormat.format(date);
-	}
-	
-	/**
 	 * This method executes a test step either by finding an element and performing action or by assertion.
 	 * @param testStep Should contain [Step Name, Locator Type, Locator Value, Action, Data Value]
 	 * @throws IOException 
@@ -62,13 +50,16 @@ public class Executor {
 		String[] actionResult = new String[2];
 		String[] stepResult = new String[4];
 		
-		Object element;
+		Object element = new Object();
 		String stepAction;
 		String stepDataValue;
 		
 		// Initialize Status
 		stepResult[0] = step[0];
-		stepResult[2] = now("dd/MM/yyyy HH:mm:ss:S");
+		stepResult[2] = Utils.now("dd/MM/yyyy HH:mm:ss:S");
+		
+		// Initialize step variables
+		String stepName = step[0];
 		
 		// Get action type
 		if(step[3] != null) 
@@ -89,7 +80,7 @@ public class Executor {
 			case "run":
 				// Get contained test and its test steps
 				HashMap containedTest = (HashMap)allTestsHash.get(step[1]);
-				ArrayList<String[]> containedTestSteps = (ArrayList<String[]>)(containedTest).get(step[2]);
+				ArrayList<String[]> containedTestSteps = (ArrayList<String[]>)((ArrayList<String[]>)(containedTest).get(step[2])).clone();
 				try {
 					if(stepDataValue != null && Integer.parseInt(stepDataValue) == -1)
 						containedTestSteps.remove(containedTestSteps.size() -1 );
@@ -101,19 +92,20 @@ public class Executor {
 			// Assertion step
 			case "assert":
 				// Find web element
-				element = Selenium.find(driver, step[1], step[2]);
+				element = Selenium.find(driver, step[1], step[2], null);
 				
 				// Element not found
 				if(element == null){
-					actionResult = Selenium.action(null, step[1], stepAction, stepDataValue);
+					actionResult[0] = "F";
+					actionResult[1] = "Element - {" + step[1] + " => " + step[2] + "} not found.";
 				}
 				// Element was a string
 				else if (element.getClass().getSimpleName().equalsIgnoreCase("string")) {
-					actionResult = Selenium.action(null, (String)element, stepAction, stepDataValue);
+					actionResult = Selenium.action(driver, (String)element, stepAction, stepDataValue);
 				}
 				// Element exists
 				else {
-					actionResult = Selenium.action(null, (WebElement)element, stepAction, stepDataValue);
+					actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
 				}
 				break;
 				
@@ -146,7 +138,22 @@ public class Executor {
 				driver = Selenium.initDriver(null, config[1]);
 				actionResult[0] = ".";
 				break;
+			case "count":
+				// Find web elements
+				List<WebElement> elementList = Selenium.findElements(driver, step[1], step[2]);
 				
+				// Verify Element Count 
+				if(elementList != null && elementList.size() == Integer.parseInt(stepDataValue)) {
+					actionResult[0] = ".";
+				}
+				else {
+					actionResult[0] = "F";
+					if(elementList != null)
+						actionResult[1] = "Expected number of elements - " + stepDataValue + ", but found - " + elementList.size() + ".";
+					else
+						actionResult[1] = "Expected number of elements - " + stepDataValue + ", but found - 0.";
+				}
+				break;
 			// Get URL
 			case "get":
 				driver.get(stepDataValue);
@@ -155,26 +162,20 @@ public class Executor {
 			// Web Element Related - Negative
 			case "isnotdisplayed":
 			case "isnotpresent":
-				// Find web element
-				element = Selenium.find(driver, step[1], step[2]);
-				
-				// Element not found, success
-				if(element == null) {
-					actionResult[0] = ".";
-				}
-				// Element found, check for displayed property
-				else {
-					actionResult = Selenium.action(null, (WebElement)element, stepAction, stepDataValue);
-				}
+				actionResult = Selenium.action(driver, step[1], stepAction, step[2]);
 				break;
 			// Web Element Related - Positive
 			case "isdisplayed":
 			case "ispresent":
+			case "isempty":
 			case "click":
+			case "rightclick":
 			case "input":
 			case "hover":
+			case "clear":
+			case "draganddrop":
 				// Find web element
-				element = Selenium.find(driver, step[1], step[2]);
+				element = Selenium.find(driver, step[1], step[2], stepDataValue);
 
 				// Element not found
 				if (element == null) {
@@ -191,20 +192,46 @@ public class Executor {
 				}
 				break;
 			default:
-				String[] x = {"F", "There is a problem at this step. Could not identify the element type."};
+				String[] x = {"F", "There is a problem at this step. Could not identify the element type or action type."};
 				actionResult = x;
 				break;
 		}
 		
+		// PASS
 		if (actionResult[0].equalsIgnoreCase(".")) {
 			System.out.print(".");
 			stepResult[1] = "PASS";
-		} else {
+		} 
+		// WARNING
+		else if (actionResult[0].equalsIgnoreCase("W")) {
+			System.out.print("W");
+			stepResult[1] = "WARNING: " + actionResult[1];
+			
+			// Take screenshot			
+				String tempFileName = currentModule + "_" + currentTest + "_" + stepName + "_error.png"; 
+						
+			// If element was present, take screenshot around it, else take complete screenshot
+			if(element != null && element instanceof WebElement){
+				Selenium.screenshot(driver, tempFileName, (WebElement)element);
+			}
+			else
+				Selenium.screenshot(driver, tempFileName, null);
+		}
+		else{
 			System.out.print("F");
 			stepResult[1] = "FAIL: " + actionResult[1];
+			
+			// Take screenshot			
+			String tempFileName = currentModule + "_" + currentTest + "_" + stepName + "_error.png"; 
+			
+			// If elemen was present, take screenshot around it, else take complete screenshot
+			if(element != null && element instanceof WebElement)
+				Selenium.screenshot(driver, tempFileName, (WebElement)element);
+			else
+				Selenium.screenshot(driver, tempFileName, null);
 		}
 		
-		stepResult[3] = now("dd/MM/yyyy HH:mm:ss:SS");
+		stepResult[3] = Utils.now("dd/MM/yyyy HH:mm:ss:SS");
 		
 		return stepResult;
 	}
@@ -232,11 +259,7 @@ public class Executor {
 			
 			// If self contained test was not run, add status
 			if(testStepResult != null) {
-				// Take screenshot if test step failed				
-				if (testStepResult[1].contains("FAIL")) {
-					String tempFileName = currentModule + "_" + testName + "_" + testStepResult[0] + "_error.png"; 
-					Selenium.screenshot(driver, tempFileName);
-				}
+				
 				
 				if(testStatuses.get(currentTest) == null) testStatuses.put(currentTest, new ArrayList<String[]>());
 
@@ -245,7 +268,10 @@ public class Executor {
 		}
 			
 		// Close driver if called from parent module
-		if(openDriver == true) driver.close();
+		if(openDriver == true) { 
+			driver.close();
+			driver.quit();
+		}
 		
 		return testStatuses;
 	}
@@ -293,7 +319,7 @@ public class Executor {
 			
 			for (String test : tests) {
 				
-				System.out.print(" ");
+				System.out.print("\n" + test + ": ");
 				// Initialize before execution
 				if(status.get(moduleName) == null) {
 					HashMap<String, ArrayList<String[]>> tempTestHash = new HashMap<String, ArrayList<String[]>>();
@@ -342,4 +368,5 @@ public class Executor {
 	private static void setallTestsHash(HashMap allTestsHash) {
 		Executor.allTestsHash = allTestsHash;
 	}
+
 }

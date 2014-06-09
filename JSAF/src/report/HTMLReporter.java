@@ -73,8 +73,9 @@ public class HTMLReporter {
 	/**
 	 * This method writes the summary tab details using the input parameter.
 	 * @param summary - String array with values as [Number of modules, Tests Executed, Test Steps executed, Number of TC passed, Number of TC failed, Number of TC skipped]
+	 * @throws ParseException 
 	 */
-	private static String summaryTab(String[] summary) {
+	private static String summaryTab(String[] summary) throws ParseException {
 		return    	"<div class='tab-pane active' id='summary'>\n"
 				+ 	"	<table class='table table-bordered table-hover'>\n"
 				+ 	"			<tbody>\n"
@@ -91,24 +92,36 @@ public class HTMLReporter {
 				+ 	"					<td>" + summary[1] + "</td>\n"
 				+	"				</tr>\n"
 				+ 	"				<tr>\n"
-				+ 	"					<td class='info'><strong>Modules</strong></td>\n"
+				+ 	"					<td class='info'><strong>Start Time</strong></td>\n"
 				+ 	"					<td>" + summary[2] + "</td>\n"
+				+	"				</tr>\n"
+				+ 	"				<tr>\n"
+				+ 	"					<td class='info'><strong>End Time</strong></td>\n"
+				+ 	"					<td>" + summary[3] + "</td>\n"
+				+	"				</tr>\n"
+				+ 	"				<tr>\n"
+				+ 	"					<td class='info'><strong>Total Duration(In Minutes)</strong></td>\n"
+				+ 	"					<td>" + Utils.timeDifference("dd/MM/yyyy HH:mm:ss:S", summary[2], summary[3], TimeUnit.MINUTES) + "</td>\n"
+				+	"				</tr>\n"
+				+ 	"				<tr>\n"
+				+ 	"					<td class='info'><strong>Modules</strong></td>\n"
+				+ 	"					<td>" + summary[4] + "</td>\n"
 				+ 	"				</tr>\n"
                 + 	"				<tr>\n"
                 + 	"					<td class='info'><strong>Tests Executed</strong></td>\n"
-                + 	"					<td>" + summary[3] + "</td>\n"
-                + 	"				</tr>\n"
-                + 	"				<tr>\n"
-                + 	"					<td class='info'><strong>Tests Steps Executed</strong></td>\n"
-                + 	"					<td>" + summary[4] + "</td>\n"
-                + 	"				</tr>\n"
-                + 	"				<tr>\n"
-                + 	"					<td class='success'><strong>Passed</strong></td>\n"
                 + 	"					<td>" + summary[5] + "</td>\n"
                 + 	"				</tr>\n"
                 + 	"				<tr>\n"
-                + 	"					<td class='danger'><strong>Failed</strong></td>\n"
+                + 	"					<td class='info'><strong>Tests Steps Executed</strong></td>\n"
                 + 	"					<td>" + summary[6] + "</td>\n"
+                + 	"				</tr>\n"
+                + 	"				<tr>\n"
+                + 	"					<td class='success'><strong>Passed</strong></td>\n"
+                + 	"					<td>" + summary[7] + "</td>\n"
+                + 	"				</tr>\n"
+                + 	"				<tr>\n"
+                + 	"					<td class='danger'><strong>Failed</strong></td>\n"
+                + 	"					<td>" + summary[8] + "</td>\n"
                 + 	"				</tr>\n"
                 + 	"			</tbody>\n"
                 + 	"	</table>\n"
@@ -211,11 +224,13 @@ public class HTMLReporter {
 			for (String[] steps : moduleSteps) {
 				if(steps[2].contains("FAIL")) {
 					temp += "							<tr class='danger'>\n";
+				} else if(steps[2].contains("WARNING")) {
+					temp += "							<tr class='warning'>\n";
 				} else {
 					temp += "							<tr class='success'>\n";
 				}
 				for (int j = 0; j < steps.length; j++) {
-					if(j==2 && steps[j].contains("FAIL")) {
+					if(j==2 && (steps[j].contains("FAIL") || steps[2].contains("WARNING"))) {
 						String[] t = steps[j].split(":");
 						temp +=	"								<td><a class='show-modal' href='" + moduleName.toLowerCase() + "_" + steps[0].toLowerCase() + "_" + steps[1].toLowerCase() + "_error.png' data-msg = '" + Utils.strConcat(t, 1, t.length-1) + "'>" + steps[j].split(":")[0] + "</a></td>";
 					} else {

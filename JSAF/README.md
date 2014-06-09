@@ -5,13 +5,15 @@ An automation framework for performing automation testing of Web Applications us
 
 ## How to Use ##
 * Create data file that hosts configuration, execution list and test cases.
-	* Refer data file in resources folder for reference
-* Provide data file path to main function
-* Run main
+	* Refer wiki on how to create test case file, which has the required format for execution
+* Provide data file path as the first argument
+* Execute main function or run the jar file
 * Result report is generated in reports folder
 
 ## Instructions ##
-* Reads excel file from /resources/ folder
+* Reads excel file containing test cases
+* Requires Selenium Grid to be set up (Looks for default port, i.e., 4444)
+* Executes the test cases specified in the 'Execution Manager' sheet
 * Can call standalone test case within another test case
 	* DRY Principle - Allows to reuse existing test case within another test case 
 * Allows overiding the steps in standalone tests called within a test
@@ -19,16 +21,28 @@ An automation framework for performing automation testing of Web Applications us
 ## Selenium Capabilities ##
 * Can locate web elements using all 7 locating methods (Name, TagName, CSS, XPATH, ID, LinkText, PartialLinkText)
 * Takes screenshot in case of step failure
-* Can perform below selenium functions:
+* Can run testing on Firefox and Chrome
+* Has default listener for AJAX calls (Listens to 'jQuery.active == 0' condition)
+* Can perform Element find using:
+	* Find (Waits upto 5 seconds for the element to be present)
+	* Immediate Find (No Wait)
+	* Find Elements (Finds all elements matching the criteria)
+* Can perform below selenium actions:
+	* Wait
 	* Input
 	* Click / Check
+	* Right Click
 	* Clear
+	* Empty
 	* Element Presence/Element Displayed
 	* Element Not Present/Element Not Displayed
 	* Hover
 	* Javascript
+	* Drag And Drop
+	* Run (Run another test case)
 	* Assert
 		* Element Text Assert
+		* Element Attribute(Value) Assert
 		* Current Url Assert
 
 ## Dependencies ##
@@ -40,13 +54,17 @@ An automation framework for performing automation testing of Web Applications us
 * ~~Reporting~~
 * ~~Using results from execution module in reporting module~~
 * ~~Take screenshot in case of step failure~~
-* Allow providing data file path from command line / run config - In-Progress
 * ~~Adding assertion checks~~
+* ~~Allow providing data file path from command line / run config~~
 * Adding advanced selenium functions - In-Progress
+* Better Errors
+* Better Reports
 * Error focus in screenshot
-* Migrate to Maven/Ant project
+* ~~Migrate to Maven/Ant project~~ - Replaced with JAR executable
 * Email configuration for report delivery
 
 ## Change Log ##
+* __06/06/2014__ : Created JAR executable, added Selenium Grid by default, AJAX listeners, command line argument for Data file
+* __04/06/2014__ : Added more selenium funtions, restructured error handler for Action - Assert
 * __02/06/2014__ : Restructured executor to remove if/elsifs and use switch for action types. 
 * Reworked Reading and Executing for allowing user to reuse existing test case within another test case.
