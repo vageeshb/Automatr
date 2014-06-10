@@ -162,8 +162,69 @@ public class HTMLReporter {
 		
 		temp 		+=	"		</tbody>\n"
 					+ 	"	</table>\n"
-					+ 	"</div>";
+					+ 	"</div>\n";
 		return temp;
+	}
+	
+	private static String testCaseDetail(ArrayList<String[]> currentTestCaseSteps, String moduleName, String testCaseName) throws ParseException {
+		// Write Previous Test Case Info
+		String content = "";
+		String header = "							<div class='panel panel-success'>\n";
+		for(String[] testStep: currentTestCaseSteps) {
+			if(testStep[2].contains("FAIL")) {
+				header = 	"							<div class='panel panel-danger'>\n";
+			}
+		}
+		content	+= 	header
+				+ 	"								<div class='panel-heading'>\n"
+				+ 	"									<h4 class='panel-title'>\n"
+				+ 	"										<a data-toggle='collapse' data-parent='#" + moduleName + "_test_cases' href='#" + testCaseName + "'>" + testCaseName + "</a>\n"
+				+ 	"									</h4>"
+				+ 	"								</div>\n"
+				+ 	"								<div id='" + testCaseName + "' class='panel-collapse collapse'>\n"
+				+ 	"									<div class='panel-body'>\n"
+				+ 	"										<table class='table table-bordered table-hover'>\n"
+    			+ 	"											<thead>\n"
+    			+ 	"												<tr class='info'>\n"
+    			+ 	"													<th>Test Step Description</th>\n"
+    			+ 	"													<th>Status</th>\n"
+    			+	"													<th>Start Time</th>\n"
+    			+ 	"													<th>End Time</th>\n"
+    			+   "													<th>Duration <br/>(in Seconds)</th>\n"
+    			+ 	"												</tr>\n"
+    			+ 	"											</thead>\n"
+    			+	"											<tbody>\n";
+			
+		for (String[] testStep : currentTestCaseSteps) {
+			
+			if(testStep[2].contains("FAIL")) {
+				content += "								<tr class='danger'>\n";
+			} else if(testStep[2].contains("WARNING")) {
+				content += "								<tr class='warning'>\n";
+			} else {
+				content += "								<tr class='success'>\n";
+			}
+			
+			for (int j = 1; j < testStep.length; j++) {
+				if(j==2 && (testStep[j].contains("FAIL") || testStep[2].contains("WARNING"))) {
+					String[] t = testStep[j].split(":");
+					content +=	"									<td><a class='show-modal' href='" + moduleName.toLowerCase() + "_" + testStep[0].toLowerCase() + "_" + testStep[1].toLowerCase() + "_error.png' data-msg = '" + Utils.strConcat(t, 1, t.length-1) + "'>" + testStep[j].split(":")[0] + "</a></td>\n";
+				} else {
+					content +=	"									<td>" + testStep[j] + "</td>\n";
+				}
+			}
+			content += "									<td>" + Utils.timeDifference("dd/MM/yyyy HH:mm:ss:S", testStep[3], testStep[4], TimeUnit.MILLISECONDS)/(1000.00) + "</td>\n" 
+				 +	"							</tr>\n";
+			
+		}
+			// Close TC Detail boday
+		content 	+=	"											</tbody>\n"
+				+ 	"										</table>\n"
+				+ 	"									</div>\n"
+				+ 	"								</div>\n"
+				+ 	"							</div>\n";
+		
+		return content;
 	}
 	
 	/**
@@ -173,81 +234,71 @@ public class HTMLReporter {
 	 */
 	@SuppressWarnings({ "unchecked" })
 	private static String detailTab(HashMap<?, ?> hashMap) throws ParseException {
-		boolean flag = true;
-		String temp = 	"<div class='tab-pane' id='details'>"
-					+ 	"	<div class='panel panel-default'>"
-					+ 	"		<div class='panel-heading'><strong>Details of Test Execution</strong></div>"
-					+ 	"			<div class='panel-body'>"
-					+ 	"				<ul class='nav nav-tabs nav-justified'>";
+		boolean activeFlag = true;
+		
+		String temp = 	"<div class='tab-pane' id='details'>\n"
+					+ 	"	<div class='panel panel-default'>\n"
+					+ 	"		<div class='panel-heading'><strong>Details of Test Execution</strong></div>\n"
+					+ 	"			<div class='panel-body'>\n"
+					+ 	"				<ul class='nav nav-tabs nav-justified'>\n";
 		
 		Set<?> set = hashMap.keySet();
 		Iterator<?> i = set.iterator();
 		while(i.hasNext()) {
 			String moduleName = i.next().toString().toUpperCase();
-			if(flag == true) {
-				temp += 	"<li class='active'><a href='#" + moduleName + "' data-toggle='tab'>" + moduleName + "</a></li>";
-				flag = false;
+			if(activeFlag == true) {
+				temp += 	"					<li class='active'><a href='#" + moduleName + "' data-toggle='tab'>" + moduleName + "</a></li>\n";
+				activeFlag = false;
 			} else {
-				temp += 	"<li><a href='#" + moduleName + "' data-toggle='tab'>" + moduleName + "</a></li>";
+				temp += 	"					<li><a href='#" + moduleName + "' data-toggle='tab'>" + moduleName + "</a></li>\n";
 			}
 		}
 		
 		temp 		+=	"				</ul>\n"
         			+ 	"				<br>\n"
         			+	"				<div class='tab-content'>\n";
-		flag = true;
+		activeFlag = true;
 		set = hashMap.entrySet();
 		i = set.iterator();
 		while(i.hasNext()) {
+			
 			Map.Entry<String, ArrayList<String[]>> me = (Map.Entry<String, ArrayList<String[]>>)i.next();
 			String moduleName = me.getKey().toString().toUpperCase();
 			ArrayList<String[]> moduleSteps = (ArrayList<String[]>)me.getValue();
-			if(flag == true) {
-				temp	+=  "				<div class='tab-pane active' id='" + moduleName + "'>";
-				flag = false;
+			
+			if(activeFlag == true) {
+				temp	+=  "					<div class='tab-pane active' id='" + moduleName + "'>\n";
+				activeFlag = false;
 			} else {
-				temp	+=  "				<div class='tab-pane' id='" + moduleName + "'>";
+				temp	+=  "					<div class='tab-pane' id='" + moduleName + "'>\n";
 			}
-			temp	+= 	"					<table class='table table-bordered table-hover'>"
-        			+ 	"						<thead>"
-        			+ 	"							<tr class='info'>"
-        			+ 	"								<th>Test Name</th>"
-        			+ 	"								<th>Test Step Description</th>"
-        			+ 	"								<th>Status</th>\n"
-        			+	"								<th>Start Time</th>\n"
-        			+ 	"								<th>End Time</th>\n"
-        			+   "								<th>Duration <br/>(in Seconds)</th>\n"
-        			+ 	"							</tr>"
-        			+ 	"						</thead>"
-        			+	"						<tbody>";
+			
+			temp 	+= 	"						<div class='panel-group' id='" + moduleName + "_test_cases'>\n";
+			
+			// Set current test case name to first test case name
+			String currentTestCaseName = moduleSteps.get(0)[0];
+			
+			ArrayList<String[]> currentTestCaseSteps = new ArrayList<String[]>();
 			
 			for (String[] steps : moduleSteps) {
-				if(steps[2].contains("FAIL")) {
-					temp += "							<tr class='danger'>\n";
-				} else if(steps[2].contains("WARNING")) {
-					temp += "							<tr class='warning'>\n";
+
+				if(!(currentTestCaseName.equalsIgnoreCase(steps[0]))) {
+					
+					temp += testCaseDetail(currentTestCaseSteps, moduleName, currentTestCaseName);
+					
+					// Empty array list and write again
+					currentTestCaseName = steps[0];
+					currentTestCaseSteps = new ArrayList<String[]>();
+					currentTestCaseSteps.add(steps);
 				} else {
-					temp += "							<tr class='success'>\n";
+					currentTestCaseSteps.add(steps);
 				}
-				for (int j = 0; j < steps.length; j++) {
-					if(j==2 && (steps[j].contains("FAIL") || steps[2].contains("WARNING"))) {
-						String[] t = steps[j].split(":");
-						temp +=	"								<td><a class='show-modal' href='" + moduleName.toLowerCase() + "_" + steps[0].toLowerCase() + "_" + steps[1].toLowerCase() + "_error.png' data-msg = '" + Utils.strConcat(t, 1, t.length-1) + "'>" + steps[j].split(":")[0] + "</a></td>";
-					} else {
-						temp +=	"								<td>" + steps[j] + "</td>";
-					}
-				}
-				temp += "										<td>" + Utils.timeDifference("dd/MM/yyyy HH:mm:ss:S", steps[3], steps[4], TimeUnit.MILLISECONDS)/(1000.00) + "</td>\n" 
-					 +	"							</tr>\n";
 			}
-				
-        	temp 	+=	"						</tbody>"
-        			+	"					</table>"
-        			+ 	"				</div>"
-        			+ 	"			</div>"
-        			+ 	"		</div>"
-        			+ 	"	</div>"
-        			+ 	"</div>";
+			
+			temp += testCaseDetail(currentTestCaseSteps, moduleName, currentTestCaseName);
+        	temp 	+=	"		</div>\n"
+        			+ 	"	</div>\n"
+        			+ 	"</div>\n";
 		}
 		return temp;
 	}
@@ -256,7 +307,7 @@ public class HTMLReporter {
 	 * This method writes the error modal element used to display error screenshots.
 	 */
 	private static String modal() {
-		return 		"<!-- Error modal -->"
+		return 		"<!-- Error modal -->\n"
 				+	"<div class='modal fade' id='error-modal' tabindex='-1' role='dialog' aria-labelledby='error-modal-label' aria-hidden='true' style='display: none;'>\n"
 				+	"	<div class='modal-dialog'>\n"
 				+ 	"		<div class='modal-content'>\n"

@@ -184,6 +184,8 @@ public class Selenium {
 		try {
 			// Check for AJAX
 			WaitForAjax(driver);
+			// Wait for action element to be stable - Mimicking user action latency
+			Thread.sleep(500);
 			switch (actionType.toLowerCase()) {
 				case "input":
 					if(actionValue.equalsIgnoreCase("ENTER")) {
@@ -205,15 +207,20 @@ public class Selenium {
 					break;
 				case "click":
 					try {
-						actionWait.until(ExpectedConditions.elementToBeClickable((WebElement) element));
+						((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", (WebElement) element);
 						((WebElement) element).click();
 						stepStatus[0] = ".";
 						break;
 					}
 					catch(Exception e) {
-						((WebElement) element).click();
-						stepStatus[0] = "W";
-						stepStatus[1] = "Element - " + ((WebElement)element).toString() + " - was not clickable. But we tried clicking it anyway.";
+						if(((WebElement) element).isDisplayed() == true) {
+							((WebElement) element).click();
+							stepStatus[0] = "W";
+							stepStatus[1] = "We waited for the element to be clickable, but its state might have changed. We clicked it anyway.";
+						} else {
+							stepStatus[0] = "F";
+							stepStatus[1] = "The element might not be present and hence could not be clicked!";
+						}
 						break;
 					}
 				case "rightclick":
@@ -314,22 +321,24 @@ public class Selenium {
 						break;
 					}
 				case "assert":
-					if(element.getClass().getSimpleName().equalsIgnoreCase("string") == true) {
-						if(element.toString().equals(actionValue)) {
+					if(element instanceof String) {
+						if(((String) element).equalsIgnoreCase(actionValue)) {
 							stepStatus[0] = ".";
 						} 
 						else {
 							int counter = 0;
-							while(!driver.getCurrentUrl().equals(actionValue)) {
-								Thread.sleep(100);
-								counter++;
-								if(counter == 100) {
-									stepStatus[0] = "F";
-									stepStatus[1] = "Expected: " + actionValue + ", Found: " + element.toString() + ".";
+							stepStatus[0] = "F";
+							
+							while(counter <= 50) {
+								if (driver.getCurrentUrl().equals(actionValue)) {
+									stepStatus[0] = ".";
 									break;
+								} else {
+									stepStatus[1] = "Expected: " + actionValue + ", Found: " + element.toString() + ".";
+									Thread.sleep(100);
+									counter++;
 								}
 							}
-							stepStatus[0] = ".";
 						}
 					} else {
 						WebElement temp = ((WebElement) element);
@@ -376,15 +385,22 @@ public class Selenium {
 	 * @throws IOException
 	 * @throws InterruptedException 
 	 */
-	public static void screenshot(WebDriver driver, String filename, WebElement element) throws IOException, InterruptedException {
+	public static void screenshot(WebDriver driver, String filename, WebElement element, String type) throws IOException, InterruptedException {
 		
 		driver = new Augmenter().augment( driver );
 		
 		// Create border around element
 		if ( element!=null ) {
-			((JavascriptExecutor)driver).executeScript("arguments[0].style.boxShadow='0px 0px 40px red'", element);
-			((JavascriptExecutor)driver).executeScript("arguments[0].style.border='3px solid red'", element);
-			Thread.sleep(500);
+			if(type.equalsIgnoreCase("F")) {
+				((JavascriptExecutor)driver).executeScript("arguments[0].style.boxShadow='0px 0px 40px red'", element);
+				((JavascriptExecutor)driver).executeScript("arguments[0].style.border='3px solid red'", element);
+				Thread.sleep(500);
+			}
+			else if(type.equalsIgnoreCase("W")) {
+				((JavascriptExecutor)driver).executeScript("arguments[0].style.boxShadow='0px 0px 40px orange'", element);
+				((JavascriptExecutor)driver).executeScript("arguments[0].style.border='3px solid orange'", element);
+				Thread.sleep(500);
+			}
 		}
 		
 		File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);

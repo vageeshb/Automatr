@@ -58,12 +58,13 @@ An automation framework for performing automation testing of Web Applications us
 * ~~Allow providing data file path from command line / run config~~
 * Adding advanced selenium functions - In-Progress
 * Better Errors
-* Better Reports
+* ~~Better Reports~~
 * Error focus in screenshot
 * ~~Migrate to Maven/Ant project~~ - Replaced with JAR executable
 * Email configuration for report delivery
 
 ## Change Log ##
+* __10/06/2014__ : The result report now organize the test cases in accordians with status as the header color, reworked URL assert
 * __06/06/2014__ : Created JAR executable, added Selenium Grid by default, AJAX listeners, command line argument for Data file
 * __04/06/2014__ : Added more selenium funtions, restructured error handler for Action - Assert
 * __02/06/2014__ : Restructured executor to remove if/elsifs and use switch for action types. 

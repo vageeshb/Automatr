@@ -123,6 +123,7 @@ public class Executor {
 			// Closing Driver
 			case "close":
 				driver.close();
+				driver.quit();
 				driver = null;
 				actionResult[0] = ".";
 				break;
@@ -212,10 +213,10 @@ public class Executor {
 						
 			// If element was present, take screenshot around it, else take complete screenshot
 			if(element != null && element instanceof WebElement){
-				Selenium.screenshot(driver, tempFileName, (WebElement)element);
+				Selenium.screenshot(driver, tempFileName, (WebElement)element, "W");
 			}
 			else
-				Selenium.screenshot(driver, tempFileName, null);
+				Selenium.screenshot(driver, tempFileName, null, null);
 		}
 		else{
 			System.out.print("F");
@@ -226,9 +227,9 @@ public class Executor {
 			
 			// If elemen was present, take screenshot around it, else take complete screenshot
 			if(element != null && element instanceof WebElement)
-				Selenium.screenshot(driver, tempFileName, (WebElement)element);
+				Selenium.screenshot(driver, tempFileName, (WebElement)element, "F");
 			else
-				Selenium.screenshot(driver, tempFileName, null);
+				Selenium.screenshot(driver, tempFileName, null, null);
 		}
 		
 		stepResult[3] = Utils.now("dd/MM/yyyy HH:mm:ss:SS");
