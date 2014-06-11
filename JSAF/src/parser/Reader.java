@@ -172,14 +172,14 @@ public class Reader {
 		
 		Workbook workbook = Workbook.getWorkbook(excelFile);
 		
-		System.out.println("Parsing data file         : " + excelFile.getName());
+		System.out.println("Parsing data file             : " + excelFile.getName());
 		
 		Logger.separator();
 		
 		String[] configs = readConfigSheet(workbook);
 		
-		System.out.println("URL                       : " + configs[0]);
-		System.out.println("Driver Type               : " + configs[1].toUpperCase());
+		System.out.println("URL                           : " + configs[0]);
+		System.out.println("Driver Type                   : " + configs[1].toUpperCase());
 		
 		results.put("config", configs);
 		
@@ -187,11 +187,13 @@ public class Reader {
 		
 		results.put("exec_manager", execManagerHash);
 		
-		System.out.println("Total modules found       : " + execManagerHash.size());
+		System.out.println("Total modules found           : " + execManagerHash.size());
+		
+		System.out.println("Total test cases to execute   : " + execManagerHash.values().size());
 		
 		testData = readTestDataSheet(workbook);
 		
-		System.out.println("Number of test data       : " + testData.size());
+		System.out.println("Number of test data           : " + testData.size());
 		
 		results.put("test_data", testData);
 		

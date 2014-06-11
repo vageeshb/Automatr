@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.RemoteWebElement;
 
 import def.Logger;
 import def.Selenium;
@@ -28,6 +29,7 @@ public class Executor {
 	private static String[] config;
 	@SuppressWarnings("rawtypes")
 	private static HashMap allTestsHash;
+	private static HashMap<String, String> runTimeHash = new HashMap<String, String>();
 	private static WebDriver driver;
 	private static String currentModule;
 	private static String currentTest;
@@ -47,12 +49,17 @@ public class Executor {
 		ArrayList temp = (ArrayList)testStep;
 		String [] step = (String[]) temp.toArray(new String[temp.size()]);
 		
-		String[] actionResult = new String[2];
+		// Assume that by default, every action is a success
+		String[] actionResult = new String[] {".", null};
 		String[] stepResult = new String[4];
 		
+		// Declare common variables
 		Object element = new Object();
 		String stepAction;
 		String stepDataValue;
+		String locatorType = step[1];
+		String locatorValue = step[2];
+		int stepReduction = 0;
 		
 		// Initialize Status
 		stepResult[0] = step[0];
@@ -79,12 +86,17 @@ public class Executor {
 			// Run another self contained test as a part of this test
 			case "run":
 				// Get contained test and its test steps
-				HashMap containedTest = (HashMap)allTestsHash.get(step[1]);
-				ArrayList<String[]> containedTestSteps = (ArrayList<String[]>)((ArrayList<String[]>)(containedTest).get(step[2])).clone();
+				HashMap containedTest = (HashMap)allTestsHash.get(locatorType);
+				ArrayList<String[]> containedTestSteps = (ArrayList<String[]>)((ArrayList<String[]>)(containedTest).get(locatorValue)).clone();
 				try {
-					if(stepDataValue != null && Integer.parseInt(stepDataValue) == -1)
-						containedTestSteps.remove(containedTestSteps.size() -1 );
+					if(stepDataValue != null && Integer.parseInt(stepDataValue) <= 0)
+				    stepReduction = Math.abs(Integer.parseInt(stepDataValue));
+					while (stepReduction != 0) {
+						containedTestSteps.remove(containedTestSteps.size() - stepReduction); 
+						stepReduction--;
+					}
 				} catch (Exception e) {}
+				
 				executeTest(currentTest, containedTestSteps, false).get(currentTest);
 				
 				return null;
@@ -92,12 +104,11 @@ public class Executor {
 			// Assertion step
 			case "assert":
 				// Find web element
-				element = Selenium.find(driver, step[1], step[2], null);
+				element = Selenium.find(driver, locatorType, locatorValue, null);
 				
 				// Element not found
 				if(element == null){
-					actionResult[0] = "F";
-					actionResult[1] = "Element - {" + step[1] + " => " + step[2] + "} not found.";
+					actionResult = new String[] {"F", "Element - {" + locatorType + " => " + locatorValue + "} not found."};
 				}
 				// Element was a string
 				else if (element.getClass().getSimpleName().equalsIgnoreCase("string")) {
@@ -116,8 +127,7 @@ public class Executor {
 				
 			// Wait
 			case "wait":
-				Thread.sleep(Integer.parseInt(step[4]) * 100);
-				actionResult[0] = ".";
+				Thread.sleep(Integer.parseInt(stepDataValue) * 100);
 				break;
 				
 			// Closing Driver
@@ -125,46 +135,82 @@ public class Executor {
 				driver.close();
 				driver.quit();
 				driver = null;
-				actionResult[0] = ".";
 				break;
 			
 			// Open and get URL
 			case "open/get":
 				driver = Selenium.initDriver(stepDataValue, config[1]);
-				actionResult[0] = ".";
 				break;
 				
 			// Open Browser
 			case "open":
 				driver = Selenium.initDriver(null, config[1]);
-				actionResult[0] = ".";
 				break;
+				
 			case "count":
 				// Find web elements
-				List<WebElement> elementList = Selenium.findElements(driver, step[1], step[2]);
+				List<WebElement> elementList = Selenium.findElements(driver, locatorType, locatorValue);
 				
 				// Verify Element Count 
-				if(elementList != null && elementList.size() == Integer.parseInt(stepDataValue)) {
-					actionResult[0] = ".";
-				}
-				else {
-					actionResult[0] = "F";
-					if(elementList != null)
-						actionResult[1] = "Expected number of elements - " + stepDataValue + ", but found - " + elementList.size() + ".";
-					else
-						actionResult[1] = "Expected number of elements - " + stepDataValue + ", but found - 0.";
-				}
+				if(elementList == null)
+					actionResult = new String[] {"F", "Expected number of elements - " + stepDataValue + ", but found - 0."};
+				else if (elementList.size() != Integer.parseInt(stepDataValue))
+					actionResult = new String[] {"F","Expected number of elements - " + stepDataValue + ", but found - " + elementList.size() + "."};
+				
 				break;
+				
 			// Get URL
 			case "get":
 				driver.get(stepDataValue);
-				actionResult[0] = ".";
 				break;
+
 			// Web Element Related - Negative
 			case "isnotdisplayed":
 			case "isnotpresent":
-				actionResult = Selenium.action(driver, step[1], stepAction, step[2]);
+				actionResult = Selenium.action(driver, locatorType, stepAction, locatorValue);
 				break;
+				
+			// Web Element Related - Run time data match (Save and Match)
+			case "save":
+				// Find web element
+				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
+
+				// Element not found
+				if (element == null) {
+					actionResult = new String[] {"F", "Could not locate element with { &#39;" + locatorType + "&#39; = &#39;" + locatorValue + "&#39; }."};
+				}
+				// Element was found
+				else {
+					// Perform action step
+					actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
+					
+					// If action was succesfull, store the value to a hash
+					if(actionResult[0].equals(".")) {
+						runTimeHash.put(stepDataValue, actionResult[1]);
+					}
+				} 
+				break;
+			case "match":
+				// Find web element
+				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
+
+				// Element not found
+				if (element == null) {
+					actionResult = new String[] {"F", "Could not locate element with { &#39;" + locatorType + "&#39; = &#39;" + locatorValue + "&#39; }."};;
+				}
+				// Element was found
+				else {
+					if(runTimeHash.get(stepDataValue) != null) {
+						// Perform action step
+						actionResult = Selenium.action(driver, (WebElement)element, stepAction, runTimeHash.get(stepDataValue));
+					}
+					// Invalid run time variable name was given
+					else {
+						actionResult = new String[] {"F","Could not look up the value of run-time variable [" + stepDataValue + "]."};
+					}
+				} 
+				break;
+				
 			// Web Element Related - Positive
 			case "isdisplayed":
 			case "ispresent":
@@ -176,58 +222,52 @@ public class Executor {
 			case "clear":
 			case "draganddrop":
 				// Find web element
-				element = Selenium.find(driver, step[1], step[2], stepDataValue);
+				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
 
 				// Element not found
 				if (element == null) {
-					String[] x = {"F", "Could not locate element with { &#39;" + step[1] + "&#39; = &#39;" + step[2] + "&#39; }."};
-					actionResult = x;
+					actionResult = new String[] {"F", "Could not locate element with { &#39;" + locatorType + "&#39; = &#39;" + locatorValue + "&#39; }."};;
 				}
 				// Element was found
-				else if(element.getClass().getSimpleName().equalsIgnoreCase("RemoteWebElement")){
+				else if(element instanceof RemoteWebElement || element instanceof WebElement){
 					// Perform action step
 					actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
 				} else {
-					String[] x = {"F", "There is a problem at this step. Could not identify the element type."};
-					actionResult = x;
+					actionResult = new String[] {"F", "There is a problem at this step. Could not identify the element type."};
 				}
 				break;
 			default:
-				String[] x = {"F", "There is a problem at this step. Could not identify the element type or action type."};
-				actionResult = x;
+				actionResult = new String[] {"F", "There is a problem at this step. Could not identify the element type or action type."};
 				break;
 		}
 		
+		
+		// STEP RESULT
 		// PASS
 		if (actionResult[0].equalsIgnoreCase(".")) {
+			
+			// Write to Console
 			System.out.print(".");
 			stepResult[1] = "PASS";
 		} 
-		// WARNING
-		else if (actionResult[0].equalsIgnoreCase("W")) {
-			System.out.print("W");
-			stepResult[1] = "WARNING: " + actionResult[1];
+		// FAIL / WARNING
+		else {
 			
-			// Take screenshot			
-				String tempFileName = currentModule + "_" + currentTest + "_" + stepName + "_error.png"; 
-						
-			// If element was present, take screenshot around it, else take complete screenshot
-			if(element != null && element instanceof WebElement){
-				Selenium.screenshot(driver, tempFileName, (WebElement)element, "W");
-			}
+			// Write to console
+			System.out.print(actionResult[0].toUpperCase());
+			
+			// Assign step status
+			if(actionResult[0].equalsIgnoreCase("F"))
+				stepResult[1] = "FAIL: " + actionResult[1];
 			else
-				Selenium.screenshot(driver, tempFileName, null, null);
-		}
-		else{
-			System.out.print("F");
-			stepResult[1] = "FAIL: " + actionResult[1];
+				stepResult[1] = "WARNING: " + actionResult[1];
 			
 			// Take screenshot			
 			String tempFileName = currentModule + "_" + currentTest + "_" + stepName + "_error.png"; 
 			
-			// If elemen was present, take screenshot around it, else take complete screenshot
+			// If element was present, highlight the element, else take complete screenshot
 			if(element != null && element instanceof WebElement)
-				Selenium.screenshot(driver, tempFileName, (WebElement)element, "F");
+				Selenium.screenshot(driver, tempFileName, (WebElement)element, actionResult[0].toUpperCase());
 			else
 				Selenium.screenshot(driver, tempFileName, null, null);
 		}

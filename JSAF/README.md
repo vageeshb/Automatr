@@ -25,7 +25,6 @@ An automation framework for performing automation testing of Web Applications us
 * Has default listener for AJAX calls (Listens to 'jQuery.active == 0' condition)
 * Can perform Element find using:
 	* Find (Waits upto 5 seconds for the element to be present)
-	* Immediate Find (No Wait)
 	* Find Elements (Finds all elements matching the criteria)
 * Can perform below selenium actions:
 	* Wait
@@ -34,12 +33,14 @@ An automation framework for performing automation testing of Web Applications us
 	* Right Click
 	* Clear
 	* Empty
-	* Element Presence/Element Displayed
+	* Element Present/Element Displayed
 	* Element Not Present/Element Not Displayed
 	* Hover
 	* Javascript
 	* Drag And Drop
 	* Run (Run another test case)
+	* Save - Save Text or Value attribute of an element to run-time variable
+	* Match - Match the Text or Value of an element to stored run-time variable
 	* Assert
 		* Element Text Assert
 		* Element Attribute(Value) Assert
@@ -59,11 +60,12 @@ An automation framework for performing automation testing of Web Applications us
 * Adding advanced selenium functions - In-Progress
 * Better Errors
 * ~~Better Reports~~
-* Error focus in screenshot
+* ~~Error focus in screenshot~~
 * ~~Migrate to Maven/Ant project~~ - Replaced with JAR executable
 * Email configuration for report delivery
 
 ## Change Log ##
+* __11/06/2014__ : Refactored code, added Save/Match functionality, added error focus on web element
 * __10/06/2014__ : The result report now organize the test cases in accordians with status as the header color, reworked URL assert
 * __06/06/2014__ : Created JAR executable, added Selenium Grid by default, AJAX listeners, command line argument for Data file
 * __04/06/2014__ : Added more selenium funtions, restructured error handler for Action - Assert
