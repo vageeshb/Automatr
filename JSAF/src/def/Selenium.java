@@ -327,9 +327,15 @@ public class Selenium {
 					// Action - Perform Click on Element
 					case "click":
 						try {
-							// Scroll to bring element into view
-							((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", thisElement);
-							thisElement.click();
+							// Check if element was on screen
+							if (thisElement.getSize() != null) {
+								thisElement.click();
+							}
+							// Element did not have any size, scroll into view the element
+							else {
+								((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", thisElement);
+								thisElement.click();
+							}
 							stepStatus[0] = ".";
 						}
 						catch(Exception e) {

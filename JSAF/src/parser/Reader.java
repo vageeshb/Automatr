@@ -52,7 +52,7 @@ public class Reader {
 		int numberOfRows = execManagerSheet.getRows();
 		for (int i = 1; i < numberOfRows; i++) {
 			String moduleName = execManagerSheet.getCell(0,i).getContents();
-			if (execManagerSheet.getCell(2,i).getContents().equalsIgnoreCase("y")) {
+			if (execManagerSheet.getCell(2,i).getContents() != null && execManagerSheet.getCell(2,i).getContents().equalsIgnoreCase("y")) {
 				testCount ++;
 				if (execHash.containsKey(moduleName) == false ) {
 					execHash.put(moduleName, new ArrayList<String>());
