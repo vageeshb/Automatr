@@ -7,6 +7,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -169,6 +171,8 @@ public class HTMLReporter {
 	private static String testCaseDetail(ArrayList<String[]> currentTestCaseSteps, String moduleName, String testCaseName) throws ParseException {
 		// Write Previous Test Case Info
 		String content = "";
+		int StepCounter = 0;
+		
 		String header = "							<div class='panel panel-success'>\n";
 		for(String[] testStep: currentTestCaseSteps) {
 			if(testStep[2].contains("FAIL")) {
@@ -186,6 +190,7 @@ public class HTMLReporter {
 				+ 	"										<table class='table table-bordered table-hover'>\n"
     			+ 	"											<thead>\n"
     			+ 	"												<tr class='info'>\n"
+    			+ 	"													<th>Step Number</th>\n"
     			+ 	"													<th>Test Step Description</th>\n"
     			+ 	"													<th>Status</th>\n"
     			+	"													<th>Start Time</th>\n"
@@ -202,8 +207,10 @@ public class HTMLReporter {
 			} else if(testStep[2].contains("WARNING")) {
 				content += "								<tr class='warning'>\n";
 			} else {
-				content += "								<tr class='success'>\n";
+				content += "								<tr>\n";
 			}
+			
+			content += "									<td>" + (++StepCounter) + "</td>\n";
 			
 			for (int j = 1; j < testStep.length; j++) {
 				if(j==2 && (testStep[j].contains("FAIL") || testStep[2].contains("WARNING"))) {
@@ -275,6 +282,13 @@ public class HTMLReporter {
 			
 			temp 	+= 	"						<div class='panel-group' id='" + moduleName + "_test_cases'>\n";
 			
+			// Sort the test cases
+			Collections.sort(moduleSteps, new Comparator<String[]>() {
+	            public int compare(String[] strings, String[] otherStrings) {
+	                return strings[0].compareTo(otherStrings[0]);
+	            }
+	        });
+			
 			// Set current test case name to first test case name
 			String currentTestCaseName = moduleSteps.get(0)[0];
 			
@@ -297,9 +311,10 @@ public class HTMLReporter {
 			
 			temp += testCaseDetail(currentTestCaseSteps, moduleName, currentTestCaseName);
         	temp 	+=	"		</div>\n"
-        			+ 	"	</div>\n"
-        			+ 	"</div>\n";
+        			+ 	"	</div>\n";
 		}
+		temp += "</div>\n";
+		
 		return temp;
 	}
 	

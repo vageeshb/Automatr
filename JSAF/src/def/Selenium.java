@@ -173,6 +173,57 @@ public class Selenium {
 	}
 	
 	/**
+	 * This method waits for the element to be invisible
+	 * @param driver
+	 * @param locatorType
+	 * @param locatorValue
+	 * @return
+	 */
+	public static String[] isNotDisplayed(WebDriver driver, String locatorType, String locatorValue) {
+		
+		// Define webdriver wait, waits for max 10 seconds to find an element
+		WebDriverWait wait = new WebDriverWait(driver,10);
+		
+		try {
+			String[] result = {".", null}; 
+			switch (locatorType.toLowerCase()) {
+				case "id":
+					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id(locatorValue)));
+					break;
+				case "xpath":
+					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.xpath(locatorValue)));
+					break;
+				case "css":
+					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(locatorValue)));
+					break;
+				case "classname":
+					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className(locatorValue)));
+					break;
+				case "linktext":
+					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.linkText(locatorValue)));
+					break;
+				case "name":
+					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.name(locatorValue)));
+					break;
+				case "partiallinktext":
+					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.partialLinkText(locatorValue)));
+					break;
+				case "tagname":
+					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.tagName(locatorValue)));
+					break;
+				// Invalid locator type was passed, return null
+				default:
+					return null;
+			}
+			return result;
+		} 
+		// Wait timed out before the element could be located
+		catch(Exception e) {
+			return new String[]{"F", "Element with {" + locatorType + " => " + locatorValue + "}, was present on the screen."};
+		}
+	}
+		
+	/**
 	 * This method performs a selenium action on the web element.
 	 * @param driver The web driver to attach the action to
 	 * @param element The web element on which an action is to be performed
@@ -199,18 +250,6 @@ public class Selenium {
 				// Perform Action
 				switch (actionType.toLowerCase()) {
 						
-					// Verification - Verify if the element is not displayed or is not present
-					case "isnotpresent":
-					case "isnotdisplayed":
-						WebElement ele = (WebElement)find(driver, strElement, actionValue, null);
-						if(ele == null) {
-							stepStatus[0] = ".";
-						}
-						else {
-							stepStatus[0] = "F";
-							stepStatus[1] = "The element with {" + strElement + " => " + actionValue + "}, is present on the screen.";
-						}
-						break;
 					// Verification - Verify if the url matches the passed value
 					case "assert":
 						if(strElement.equalsIgnoreCase(actionValue)) {
@@ -260,9 +299,6 @@ public class Selenium {
 					// 	Action - Perform Input to element
 					case "input":
 						
-						// Clear the element before sending input
-						thisElement.clear();
-						
 						// Check if special keys were sent
 						if(actionValue.equalsIgnoreCase("ENTER")) {
 							thisElement.sendKeys(Keys.ENTER);
@@ -273,6 +309,8 @@ public class Selenium {
 						} 
 						// Send other key inputs
 						else {
+							// Clear the element before sending input
+							thisElement.clear();
 							thisElement.sendKeys(actionValue);
 						}
 						stepStatus[0] = ".";
@@ -282,6 +320,7 @@ public class Selenium {
 					case "hover":
 						action = new Actions(driver);
 						action.moveToElement(thisElement).build().perform();
+						Thread.sleep(500);
 						stepStatus[0] = ".";
 						break;
 						
@@ -319,9 +358,9 @@ public class Selenium {
 						WebElement toElement = driver.findElement(By.xpath(actionValue));
 						action = new Actions(driver);
 						action.clickAndHold(onElement);
-						action.pause(500);
+						Thread.sleep(500);
 						action.moveToElement(toElement);
-						action.pause(500);
+						Thread.sleep(500);
 						action.release();
 						action.perform();
 						stepStatus[0] = ".";
@@ -444,32 +483,37 @@ public class Selenium {
 	 * @throws IOException
 	 * @throws InterruptedException 
 	 */
-	public static void screenshot(WebDriver driver, String filename, WebElement element, String type) throws IOException, InterruptedException {
+	public static void screenshot(WebDriver driver, String filename, WebElement element, String type) {
 		
-		driver = new Augmenter().augment( driver );
+		try {
+			driver = new Augmenter().augment( driver );
 		
-		// Create border around element
-		if ( element!=null ) {
-			if(type.equalsIgnoreCase("F")) {
-				((JavascriptExecutor)driver).executeScript("arguments[0].style.boxShadow='0px 0px 40px red'", element);
-				((JavascriptExecutor)driver).executeScript("arguments[0].style.border='3px solid red'", element);
-				Thread.sleep(500);
+			// Create border around element
+			if ( element!=null ) {
+				if(type.equalsIgnoreCase("F")) {
+					((JavascriptExecutor)driver).executeScript("arguments[0].style.boxShadow='0px 0px 40px red'", element);
+					((JavascriptExecutor)driver).executeScript("arguments[0].style.border='3px solid red'", element);
+					Thread.sleep(500);
+				}
+				else if(type.equalsIgnoreCase("W")) {
+					((JavascriptExecutor)driver).executeScript("arguments[0].style.boxShadow='0px 0px 40px orange'", element);
+					((JavascriptExecutor)driver).executeScript("arguments[0].style.border='3px solid orange'", element);
+					Thread.sleep(500);
+				}
 			}
-			else if(type.equalsIgnoreCase("W")) {
-				((JavascriptExecutor)driver).executeScript("arguments[0].style.boxShadow='0px 0px 40px orange'", element);
-				((JavascriptExecutor)driver).executeScript("arguments[0].style.border='3px solid orange'", element);
-				Thread.sleep(500);
-			}
+			
+			File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+	
+			// Get Present Working Directory
+			String currentDir = System.getProperty("user.dir");
+	
+			Utils.makeDir(currentDir + "/temp");
+			
+			FileUtils.copyFile(scrFile, new File(currentDir + "/temp/" + filename.toLowerCase()));
 		}
-		
-		File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
-
-		// Get Present Working Directory
-		String currentDir = System.getProperty("user.dir");
-
-		Utils.makeDir(currentDir + "/temp");
-		
-		FileUtils.copyFile(scrFile, new File(currentDir + "/temp/" + filename.toLowerCase()));
+		catch(Exception e) {
+			
+		}
 	}
 	
 }

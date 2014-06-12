@@ -17,6 +17,8 @@ import def.*;;
  */
 
 public class Reader {
+	
+	private static int testCount = 0;
 	/**
 	 * This method reads the configuration settings from workbook.
 	 * @param workbook Workbook to read the configuration settings from.
@@ -51,6 +53,7 @@ public class Reader {
 		for (int i = 1; i < numberOfRows; i++) {
 			String moduleName = execManagerSheet.getCell(0,i).getContents();
 			if (execManagerSheet.getCell(2,i).getContents().equalsIgnoreCase("y")) {
+				testCount ++;
 				if (execHash.containsKey(moduleName) == false ) {
 					execHash.put(moduleName, new ArrayList<String>());
 				}
@@ -189,7 +192,7 @@ public class Reader {
 		
 		System.out.println("Total modules found           : " + execManagerHash.size());
 		
-		System.out.println("Total test cases to execute   : " + execManagerHash.values().size());
+		System.out.println("Total test cases to execute   : " + testCount);
 		
 		testData = readTestDataSheet(workbook);
 		

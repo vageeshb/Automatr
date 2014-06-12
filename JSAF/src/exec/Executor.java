@@ -148,14 +148,30 @@ public class Executor {
 				break;
 				
 			case "count":
-				// Find web elements
-				List<WebElement> elementList = Selenium.findElements(driver, locatorType, locatorValue);
 				
-				// Verify Element Count 
-				if(elementList == null)
-					actionResult = new String[] {"F", "Expected number of elements - " + stepDataValue + ", but found - 0."};
-				else if (elementList.size() != Integer.parseInt(stepDataValue))
-					actionResult = new String[] {"F","Expected number of elements - " + stepDataValue + ", but found - " + elementList.size() + "."};
+				int localCounter = 0;
+				
+				while(true) {
+					
+					// Find web elements
+					List<WebElement> elementList = Selenium.findElements(driver, locatorType, locatorValue);
+					
+					// Verify Element Count
+					if(elementList != null && elementList.size() == Integer.parseInt(stepDataValue)) {
+						break;
+					}
+					
+					Thread.sleep(200);
+					localCounter++;
+					
+					if(localCounter == 50) {
+						if(elementList == null)
+							actionResult = new String[] {"F", "Expected number of elements - " + stepDataValue + ", but found - 0."};
+						else if (elementList.size() != Integer.parseInt(stepDataValue))
+							actionResult = new String[] {"F","Expected number of elements - " + stepDataValue + ", but found - " + elementList.size() + "."};
+						break;
+					}
+				}
 				
 				break;
 				
@@ -167,7 +183,7 @@ public class Executor {
 			// Web Element Related - Negative
 			case "isnotdisplayed":
 			case "isnotpresent":
-				actionResult = Selenium.action(driver, locatorType, stepAction, locatorValue);
+				actionResult = Selenium.isNotDisplayed(driver, locatorType, locatorValue);
 				break;
 				
 			// Web Element Related - Run time data match (Save and Match)
@@ -257,7 +273,7 @@ public class Executor {
 			System.out.print(actionResult[0].toUpperCase());
 			
 			// Assign step status
-			if(actionResult[0].equalsIgnoreCase("F"))
+			if(actionResult[0].equalsIgnoreCase("f"))
 				stepResult[1] = "FAIL: " + actionResult[1];
 			else
 				stepResult[1] = "WARNING: " + actionResult[1];

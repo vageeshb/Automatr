@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 	
 		    return result;
 		}
+		
 		/**
 		 * This method searched for the given string pattern in the ArrayList
 		 * @param list The list to find pattern in
@@ -85,4 +86,5 @@ import java.util.regex.Pattern;
 			Date date = new Date();
 			return dateFormat.format(date);
 		}
+
 }
