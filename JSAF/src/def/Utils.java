@@ -10,6 +10,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 	public class Utils {
+		
+		/**
+		 * This method flattens an arraylist
+		 * @param input
+		 * @return
+		 */
 		public static ArrayList<?> flatten(ArrayList<?> input) {
 			ArrayList<Object> result = new ArrayList<Object>();
 	
@@ -72,10 +78,14 @@ import java.util.regex.Pattern;
 		public static String strConcat(String[] input, int start, int end) {
 			String temp = "";
 			for (int i = start; i <= end; i++) {
-				temp += input[i] + " ";
+				temp += input[i];
+				if (i != end) 
+					 temp += ":";
 			}
+			temp.replaceAll("\"", "\\\"");
 			return temp;
 		}
+		
 		/**
 		 * This method returns current date/time using the supplied format type.
 		 * @param formatType
@@ -85,6 +95,15 @@ import java.util.regex.Pattern;
 			DateFormat dateFormat = new SimpleDateFormat(formatType);
 			Date date = new Date();
 			return dateFormat.format(date);
+		}
+		
+		/**
+		 * This method replaces whitespaces with _ in a string and returns a lower case value
+		 * @param input
+		 * @return
+		 */
+		public static String uglify(String input) {
+			return input.replaceAll("\\s","_").toLowerCase();
 		}
 
 }

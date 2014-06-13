@@ -215,7 +215,7 @@ public class HTMLReporter {
 			for (int j = 1; j < testStep.length; j++) {
 				if(j==2 && (testStep[j].contains("FAIL") || testStep[2].contains("WARNING"))) {
 					String[] t = testStep[j].split(":");
-					content +=	"									<td><a class='show-modal' href='" + moduleName.toLowerCase() + "_" + testStep[0].toLowerCase() + "_" + testStep[1].toLowerCase() + "_error.png' data-msg = '" + Utils.strConcat(t, 1, t.length-1) + "'>" + testStep[j].split(":")[0] + "</a></td>\n";
+					content +=	"									<td><a class='show-modal' href='" + Utils.uglify(moduleName.toLowerCase() + "_" + testStep[0].toLowerCase() + "_" + testStep[1].toLowerCase() + "_error.png") + "' data-msg = '" + Utils.strConcat(t, 1, t.length-1) + "'>" + testStep[j].split(":")[0] + "</a></td>\n";
 				} else {
 					content +=	"									<td>" + testStep[j] + "</td>\n";
 				}

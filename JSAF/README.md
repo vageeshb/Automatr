@@ -38,6 +38,10 @@ An automation framework for performing automation testing of Web Applications us
 	* Hover
 	* Javascript
 	* Drag And Drop
+	* Select Box Specific Functions
+		* SelectByText
+		* SelectByValue
+		* SelectByIndex
 	* Run (Run another test case)
 	* Save - Save Text or Value attribute of an element to run-time variable
 	* Match - Match the Text or Value of an element to stored run-time variable
@@ -65,6 +69,7 @@ An automation framework for performing automation testing of Web Applications us
 * Email configuration for report delivery
 
 ## Change Log ##
+* __13/06/2014__ : Added selenium functions for Select box, reworked error filename, reword error message in html report, added functionality to run command to allow step removal from front & back
 * __12/06/2014__ : Added total test cases description while reading, fixed multiple module detail tab report bug, sorting test cases in report, fixed click - Scroll into view only if element out of viewport
 * __11/06/2014__ : Refactored code, added Save/Match functionality, added error focus on web element, uses Selenium-2.42.2
 * __10/06/2014__ : The result report now organize the test cases in accordians with status as the header color, reworked URL assert

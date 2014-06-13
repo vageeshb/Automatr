@@ -75,11 +75,10 @@ public class Executor {
 			stepAction = null;
 		
 		// Get Test Data value, if found in Test_Data hash
-		if( (String) testData.get(step[4]) != null)
+		if( step[4] != null && (String) testData.get(step[4]) != null)
 			stepDataValue = (String) testData.get(step[4]);
 		else
 			stepDataValue = step[4];
-		
 		
 		switch(stepAction.toLowerCase()) {
 
@@ -88,19 +87,46 @@ public class Executor {
 				// Get contained test and its test steps
 				HashMap containedTest = (HashMap)allTestsHash.get(locatorType);
 				ArrayList<String[]> containedTestSteps = (ArrayList<String[]>)((ArrayList<String[]>)(containedTest).get(locatorValue)).clone();
+				
+				// Catcher for Parse Exception
 				try {
-					if(stepDataValue != null && Integer.parseInt(stepDataValue) <= 0)
-				    stepReduction = Math.abs(Integer.parseInt(stepDataValue));
-					while (stepReduction != 0) {
-						containedTestSteps.remove(containedTestSteps.size() - stepReduction); 
-						stepReduction--;
+					
+					// Check if step reduction over-ride provided
+					if(stepDataValue != null) {
+						
+						stepReduction = (Integer.parseInt(stepDataValue));
+						
+						// Check if steps to remove is greater than steps in the test
+						if(Math.abs(stepReduction) > containedTestSteps.size()) {
+							actionResult = new String[] {"F", "Number of steps to remove is greater than the steps in the test."};
+						}
+						// Removal index within range
+						else {
+							while (stepReduction != 0) {
+								
+								// Remove steps from the front
+								if (stepReduction > 0) {
+									containedTestSteps.remove(stepReduction - 1); 
+									stepReduction--;
+								}
+								// Remove steps from the back
+								else {
+									containedTestSteps.remove(containedTestSteps.size() + stepReduction); 
+									stepReduction++;
+								}
+							}
+						}
 					}
-				} catch (Exception e) {}
+					
+					executeTest(currentTest, containedTestSteps, false).get(currentTest);
+					
+					return null;
+					
+				} catch (Exception e) {
+					actionResult = new String[] {"F", "Test Step Data Value is not a whole number."};
+				}
+				break;
 				
-				executeTest(currentTest, containedTestSteps, false).get(currentTest);
-				
-				return null;
-			
 			// Assertion step
 			case "assert":
 				// Find web element
@@ -237,6 +263,9 @@ public class Executor {
 			case "hover":
 			case "clear":
 			case "draganddrop":
+			case "selectbyvalue":
+			case "selectbyindex":
+			case "selectbytext":
 				// Find web element
 				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
 
@@ -279,7 +308,7 @@ public class Executor {
 				stepResult[1] = "WARNING: " + actionResult[1];
 			
 			// Take screenshot			
-			String tempFileName = currentModule + "_" + currentTest + "_" + stepName + "_error.png"; 
+			String tempFileName = Utils.uglify(currentModule + "_" + currentTest + "_" + stepName + "_error.png"); 
 			
 			// If element was present, highlight the element, else take complete screenshot
 			if(element != null && element instanceof WebElement)

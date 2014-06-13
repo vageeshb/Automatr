@@ -137,7 +137,7 @@ public class Reader {
 					if (moduleSheet.getCell(5,i).getContents().isEmpty() == false) {
 						temp.add(moduleSheet.getCell(5,i).getContents());
 					} else {
-						temp.add("");
+						temp.add(null);
 					}
 						
 					testArray.add(temp);

@@ -12,6 +12,7 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
@@ -286,6 +287,7 @@ public class Selenium {
 				WebElement thisElement = (WebElement) element;
 				WebDriverWait actionWait = new WebDriverWait(driver, 10);
 				Actions action;
+				Select selectBox;
 			
 				// Check for AJAX
 				WaitForAjax(driver);
@@ -378,6 +380,26 @@ public class Selenium {
 						stepStatus[0] = ".";
 						break;
 						
+					// Action - Perform Select by Text on Select Box
+					case "selectbytext":
+						selectBox = new Select(thisElement);
+						selectBox.selectByVisibleText(actionValue);
+						stepStatus[0] = ".";
+						break;
+					
+					// Action - Perform Select by Index on Select Box
+					case "selectbyindex":
+						selectBox = new Select(thisElement);
+						selectBox.selectByIndex(Integer.parseInt(actionValue));
+						stepStatus[0] = ".";
+						break;
+
+					// Action - Perform Select by Value on Select Box
+					case "selectbyvalue":
+						selectBox = new Select(thisElement);
+						selectBox.selectByValue(actionValue);
+						stepStatus[0] = ".";
+						break;
 					// Action - Execute a JavaScript snippet
 					case "javascript":
 						// Execute JS if driver can run JS
