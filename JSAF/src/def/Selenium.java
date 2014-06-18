@@ -336,6 +336,8 @@ public class Selenium {
 							// Element did not have any size, scroll into view the element
 							else {
 								((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", thisElement);
+								// Wait for element to be stable
+								Thread.sleep(700);
 								thisElement.click();
 							}
 							stepStatus[0] = ".";

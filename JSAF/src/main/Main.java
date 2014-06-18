@@ -114,33 +114,39 @@ public class Main {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static void main(String[] args) throws BiffException, IOException, ParseException, InterruptedException {
 		
-		// Read filename
-		File excelFile = new File(args[0]);
-		
-		// Check if the file exists
-		if (!excelFile.exists()) {
-		    System.out.println("Could not locate data file!");
+		if(args.length == 0 ) {
+			System.out.println("ERROR: Please provide path to data file.");
 		    System.exit(-1);
-		} else {
-			// File exists, run program
+		}
+		else {
+			// Read filename
+			File excelFile = new File(args[0]);
 			
-			HashMap<String, Object> readResult = Reader.read(excelFile);
-			
-			startTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
-			
-			HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("test_data"));
-			
-			endTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
-			
-			config = (String[])readResult.get("config");
-			
-			HashMap reportFormattedData = convertResultToReportFormat(testExecutionResult);
-			
-			Logger.separator();
-			
-			System.out.println("Execution Completed.\n\nGenerating test result report.");
-			
-			HTMLReporter.generate(reportFormattedData);
+			// Check if the file exists
+			if (!excelFile.exists()) {
+			    System.out.println("ERROR: Could not locate data file.");
+			    System.exit(-1);
+			} else {
+				// File exists, run program
+				
+				HashMap<String, Object> readResult = Reader.read(excelFile);
+				
+				startTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
+				
+				HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("test_data"));
+				
+				endTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
+				
+				config = (String[])readResult.get("config");
+				
+				HashMap reportFormattedData = convertResultToReportFormat(testExecutionResult);
+				
+				Logger.separator();
+				
+				System.out.println("Execution Completed.\n\nGenerating test result report.");
+				
+				HTMLReporter.generate(reportFormattedData);
+			}
 		}
 	}
 

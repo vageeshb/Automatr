@@ -68,6 +68,14 @@ public class Executor {
 		// Initialize step variables
 		String stepName = step[0];
 		
+		// Check to see if step was to be skipped
+		if(stepName.startsWith("//")) {
+			stepResult[1] = "SKIP";
+			stepResult[3] = Utils.now("dd/MM/yyyy HH:mm:ss:S");
+			System.out.print("S");
+			return stepResult;
+		}
+		
 		// Get action type
 		if(step[3] != null) 
 			stepAction = step[3];
