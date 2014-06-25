@@ -255,9 +255,9 @@ public class Executor {
 				}
 				// Element was found
 				else {
-					if(runTimeHash.get(stepDataValue) != null) {
+					if(stepDataValue != null) {
 						// Perform action step
-						actionResult = Selenium.action(driver, (WebElement)element, stepAction, runTimeHash.get(stepDataValue));
+						actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
 					}
 					// Invalid run time variable name was given
 					else {
