@@ -241,6 +241,9 @@ public class Executor {
 					
 					// If action was succesfull, store the value to a hash
 					if(actionResult[0].equals(".")) {
+						if(runTimeHash.get(stepDataValue) != null) {
+							runTimeHash.remove(stepDataValue);
+						}
 						runTimeHash.put(stepDataValue, actionResult[1]);
 					}
 				} 
@@ -352,8 +355,11 @@ public class Executor {
 		// Set Current Test
 		currentTest = testName;
 		
-		// Initialize driver if called from parent module
-		if(openDriver == true) driver = Selenium.initDriver(config[0], config[1]);
+		// Initialize driver and run-time hash if called from module run
+		if(openDriver == true) {
+			runTimeHash = new HashMap<String, String>();
+			driver = Selenium.initDriver(config[0], config[1]);
+		}
 		
 		for(Object testStep: test) {
 			
@@ -361,7 +367,6 @@ public class Executor {
 			
 			// If self contained test was not run, add status
 			if(testStepResult != null) {
-				
 				
 				if(testStatuses.get(currentTest) == null) testStatuses.put(currentTest, new ArrayList<String[]>());
 
