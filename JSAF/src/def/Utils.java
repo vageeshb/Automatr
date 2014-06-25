@@ -82,7 +82,8 @@ import java.util.regex.Pattern;
 				if (i != end) 
 					 temp += ":";
 			}
-			temp.replaceAll("\"", "\\\"");
+			temp.replaceAll("\"", "&quot;");
+			temp.replaceAll("\'", "&quot;");
 			return temp;
 		}
 		

@@ -44,10 +44,12 @@ An automation framework for performing automation testing of Web Applications us
 		* SelectByIndex
 	* Run (Run another test case)
 	* Save - Save Text or Value attribute of an element to run-time variable
+	* SaveSelected - Save first selected option in a select box
 	* Match - Match the Text or Value of an element to stored run-time variable
 	* Assert
 		* Element Text Assert
 		* Element Attribute(Value) Assert
+		* Saved run-time variable
 		* Current Url Assert
 
 ## Dependencies ##
@@ -69,6 +71,7 @@ An automation framework for performing automation testing of Web Applications us
 * Email configuration for report delivery
 
 ## Change Log ##
+* __25/06/2014__ : Added select box option saving, assert can also use run-time variable data
 * __18/06/2014__ : Error handling for missing parameter, option to skip a test step
 * __13/06/2014__ : Added selenium functions for Select box, reworked error filename, reword error message in html report, added functionality to run command to allow step removal from front & back
 * __12/06/2014__ : Added total test cases description while reading, fixed multiple module detail tab report bug, sorting test cases in report, fixed click - Scroll into view only if element out of viewport

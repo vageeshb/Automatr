@@ -55,8 +55,8 @@ public class Executor {
 		
 		// Declare common variables
 		Object element = new Object();
-		String stepAction;
-		String stepDataValue;
+		String stepAction = null;
+		String stepDataValue = null;
 		String locatorType = step[1];
 		String locatorValue = step[2];
 		int stepReduction = 0;
@@ -83,10 +83,14 @@ public class Executor {
 			stepAction = null;
 		
 		// Get Test Data value, if found in Test_Data hash
-		if( step[4] != null && (String) testData.get(step[4]) != null)
-			stepDataValue = (String) testData.get(step[4]);
-		else
-			stepDataValue = step[4];
+		if( step[4] != null ) {
+			if ((String) testData.get(step[4]) != null)
+				stepDataValue = (String) testData.get(step[4]);
+			else if (runTimeHash.get(step[4]) != null)
+				stepDataValue = (String) runTimeHash.get(step[4]);
+			else
+				stepDataValue = step[4];
+		}
 		
 		switch(stepAction.toLowerCase()) {
 
@@ -222,6 +226,7 @@ public class Executor {
 				
 			// Web Element Related - Run time data match (Save and Match)
 			case "save":
+			case "saveselected":
 				// Find web element
 				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
 
@@ -260,7 +265,10 @@ public class Executor {
 					}
 				} 
 				break;
-				
+			// Alert handle
+			case "acceptalert":
+				actionResult = Selenium.action(driver, null, stepAction, null);
+				break;
 			// Web Element Related - Positive
 			case "isdisplayed":
 			case "ispresent":

@@ -237,8 +237,19 @@ public class Selenium {
 		String[] stepStatus = new String[2];
 		
 		try {
+
+			if(element == null) {
+				switch(actionType.toLowerCase()) {
+					// Alert handler
+					case "acceptalert":
+						Alert alert = driver.switchTo().alert();
+						alert.accept();
+				        stepStatus[0] = ".";
+				        break;
+				}
+			}
 			// Action on String Element - i.e., the element was not a web element
-			if(element instanceof String) {
+			else if(element instanceof String) {
 				
 				String strElement = (String) element;
 				
@@ -337,7 +348,7 @@ public class Selenium {
 							else {
 								((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", thisElement);
 								// Wait for element to be stable
-								Thread.sleep(700);
+								Thread.sleep(1000);
 								thisElement.click();
 							}
 							stepStatus[0] = ".";
@@ -432,6 +443,11 @@ public class Selenium {
 						}
 						break;
 						
+					// Action - Save first selected option
+					case "saveselected":
+						stepStatus = new String[] {".", (new Select (thisElement)).getFirstSelectedOption().getText()};
+						break;
+
 					// Verification - Verify if element is element
 					case "isempty":
 						if(thisElement.getText().isEmpty()) {
