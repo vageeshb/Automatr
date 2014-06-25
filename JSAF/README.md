@@ -2,6 +2,7 @@ JAVA Selenium Automation Framework
 =================================
 
 An automation framework for performing automation testing of Web Applications using Selenium.
+__Version__ : 0.0.9
 
 ## How to Use ##
 * Create data file that hosts configuration, execution list and test cases.
