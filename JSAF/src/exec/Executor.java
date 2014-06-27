@@ -141,20 +141,44 @@ public class Executor {
 				
 			// Assertion step
 			case "assert":
-				// Find web element
-				element = Selenium.find(driver, locatorType, locatorValue, null);
 				
-				// Element not found
-				if(element == null){
-					actionResult = new String[] {"F", "Element - {" + locatorType + " => " + locatorValue + "} not found."};
-				}
-				// Element was a string
-				else if (element.getClass().getSimpleName().equalsIgnoreCase("string")) {
-					actionResult = Selenium.action(driver, (String)element, stepAction, stepDataValue);
-				}
-				// Element exists
+				if(locatorType == null)
+					actionResult = new String[] {"F", "Unable to locate element without locator type. Please recheck your step."};
 				else {
-					actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
+					if (locatorType.equalsIgnoreCase("url"))
+						actionResult = Selenium.action(driver, locatorType, stepAction, stepDataValue);
+					else {
+						// Find web element
+						element = Selenium.find(driver, locatorType, locatorValue, null);
+						
+						actionResult = Selenium.action(driver, element, stepAction, stepDataValue);
+					}
+				}
+				break;
+			
+			// Evaluate
+			case "evaluate":
+				// TODO
+				break;
+			
+			// Verification - Match 2 stored values or 2 strings
+			case "equal":
+				if(locatorValue != null && stepDataValue != null) {
+					if(locatorValue.contains(stepDataValue) || stepDataValue.contains(locatorValue)) {
+						actionResult[0] = ".";
+					}
+					else {
+						actionResult = new String[]{"F", "Expected |" + stepDataValue + "|, Actual |" + locatorValue + "|."};
+					}
+				}
+				else if (locatorValue != null && stepDataValue == null) {
+					actionResult = new String[]{"F", "RHS value missing, cannot perform ( '" + locatorValue + "' == null )."};
+				} 
+				else if(locatorValue == null && stepDataValue != null) {
+					actionResult = new String[]{"F", "LHS value missing, cannot perform ( null == '" + stepDataValue + "' )"};
+				}
+				else {
+					actionResult = new String[]{"F", "Both hand-side value missing, cannot perform equal assertion."};
 				}
 				break;
 				
@@ -268,10 +292,12 @@ public class Executor {
 					}
 				} 
 				break;
+				
 			// Alert handle
 			case "acceptalert":
 				actionResult = Selenium.action(driver, null, stepAction, null);
 				break;
+				
 			// Web Element Related - Positive
 			case "isdisplayed":
 			case "ispresent":
@@ -285,6 +311,8 @@ public class Executor {
 			case "selectbyvalue":
 			case "selectbyindex":
 			case "selectbytext":
+			case "ischecked":
+			case "isnotchecked":
 				// Find web element
 				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
 

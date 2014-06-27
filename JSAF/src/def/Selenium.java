@@ -103,8 +103,6 @@ public class Selenium {
 		
 		try {
 			switch (locatorType.toLowerCase()) {
-				case "url":
-					return driver.getCurrentUrl();
 				case "id":
 					return wait.until(ExpectedConditions.presenceOfElementLocated(By.id(locatorValue)));
 				case "xpath":
@@ -234,7 +232,8 @@ public class Selenium {
 	 */
 	public static String[] action(WebDriver driver, Object element, String actionType, String actionValue) {
 
-		String[] stepStatus = new String[2];
+		// Assume every step is successful, with default error message as 'Unknown action'
+		String[] stepStatus = new String[] {".", "Unknown action provided (" + actionType + ") !"};
 		
 		try {
 
@@ -244,8 +243,19 @@ public class Selenium {
 					case "acceptalert":
 						Alert alert = driver.switchTo().alert();
 						alert.accept();
-				        stepStatus[0] = ".";
 				        break;
+				     // Action - Execute a JavaScript snippet
+					case "javascript":
+						// Execute JS if driver can run JS
+						if (driver instanceof JavascriptExecutor) {
+						    ((JavascriptExecutor)driver).executeScript(actionValue);
+						}
+						// Driver cant run JS, fail the step
+						else {
+							stepStatus[0] = "F";
+							stepStatus[1] = "The driver cannot handle JavaScript execution.";
+						}
+						break;
 				}
 			}
 			// Action on String Element - i.e., the element was not a web element
@@ -264,10 +274,7 @@ public class Selenium {
 						
 					// Verification - Verify if the url matches the passed value
 					case "assert":
-						if(strElement.equalsIgnoreCase(actionValue)) {
-							stepStatus[0] = ".";
-						} 
-						else {
+						if(!strElement.equalsIgnoreCase(actionValue)) {
 							int counter = 0;
 							stepStatus[0] = "F";
 							
@@ -283,12 +290,6 @@ public class Selenium {
 							}
 						}
 						break;
-					default:
-						stepStatus[0] = "F";
-						stepStatus[1] = "Unknown action provided!";
-						if(actionType != null) stepStatus[1] = "Could not perform --> " + actionType;
-						break;
-						
 					}
 			}
 			
@@ -326,7 +327,6 @@ public class Selenium {
 							thisElement.clear();
 							thisElement.sendKeys(actionValue);
 						}
-						stepStatus[0] = ".";
 						break;
 						
 					// Action - Perform Hover over element
@@ -334,24 +334,25 @@ public class Selenium {
 						action = new Actions(driver);
 						action.moveToElement(thisElement).build().perform();
 						Thread.sleep(500);
-						stepStatus[0] = ".";
 						break;
 						
 					// Action - Perform Click on Element
 					case "click":
 						try {
 							// Check if element was on screen
-							if (thisElement.getSize() != null) {
+							/*if (thisElement.getSize() != null) {
+								thisElement.click();
+							}*/
+							if(thisElement.isDisplayed()) {
 								thisElement.click();
 							}
-							// Element did not have any size, scroll into view the element
+							// Element was not displayed on screen
 							else {
 								((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", thisElement);
 								// Wait for element to be stable
 								Thread.sleep(1000);
 								thisElement.click();
 							}
-							stepStatus[0] = ".";
 						}
 						catch(Exception e) {
 							if(thisElement.isDisplayed() == true) {
@@ -370,7 +371,6 @@ public class Selenium {
 						action = new Actions(driver);
 						action.moveToElement(thisElement);
 						action.contextClick(thisElement).build().perform();;
-						stepStatus[0] = ".";
 						break;
 						
 					// Action - Perform Drag and Drop
@@ -384,57 +384,37 @@ public class Selenium {
 						Thread.sleep(500);
 						action.release();
 						action.perform();
-						stepStatus[0] = ".";
 						break;
 						
 					// Action - Perform Clear on element
 					case "clear":
 						thisElement.clear();
-						stepStatus[0] = ".";
 						break;
 						
 					// Action - Perform Select by Text on Select Box
 					case "selectbytext":
 						selectBox = new Select(thisElement);
 						selectBox.selectByVisibleText(actionValue);
-						stepStatus[0] = ".";
 						break;
 					
 					// Action - Perform Select by Index on Select Box
 					case "selectbyindex":
 						selectBox = new Select(thisElement);
 						selectBox.selectByIndex(Integer.parseInt(actionValue));
-						stepStatus[0] = ".";
 						break;
 
 					// Action - Perform Select by Value on Select Box
 					case "selectbyvalue":
 						selectBox = new Select(thisElement);
 						selectBox.selectByValue(actionValue);
-						stepStatus[0] = ".";
-						break;
-					// Action - Execute a JavaScript snippet
-					case "javascript":
-						// Execute JS if driver can run JS
-						if (driver instanceof JavascriptExecutor) {
-						    ((JavascriptExecutor)driver).executeScript(actionValue);
-						    stepStatus[0] = ".";
-						}
-						// Driver cant run JS, fail the step
-						else {
-							stepStatus[0] = "F";
-							stepStatus[1] = "The driver cannot handle JavaScript execution.";
-						}
 						break;
 						
 					// Action - Save the value of the element
 					case "save":
 						if(thisElement.getText() != null && !thisElement.getText().isEmpty()) { 
-							stepStatus[0] = ".";
 							stepStatus[1] = thisElement.getText();
 						} 
 						else if(thisElement.getAttribute("value") != null && !thisElement.getAttribute("value").isEmpty()) {
-							stepStatus[0] = ".";
 							stepStatus[1] = thisElement.getAttribute("value");
 						}
 						else {
@@ -445,20 +425,31 @@ public class Selenium {
 						
 					// Action - Save first selected option
 					case "saveselected":
-						stepStatus = new String[] {".", (new Select (thisElement)).getFirstSelectedOption().getText()};
+						stepStatus[1] = (new Select (thisElement)).getFirstSelectedOption().getText();
 						break;
 
 					// Verification - Verify if element is element
 					case "isempty":
-						if(thisElement.getText().isEmpty()) {
-							stepStatus[0] = ".";
-						}
-						else {
+						if(!thisElement.getText().isEmpty()) {
 							stepStatus[0] = "F";
 							stepStatus[1] = "Expected the element to be empty, instead found - " + thisElement.getText() + ".";
 						}
 						break;
-
+					
+					// Verification - Verify if checkbox was checked
+					case "ischecked":
+						if(!thisElement.isSelected()) {
+							stepStatus = new String[]{"F", "Element was not checked!"};
+						}
+						break;
+					
+					// Verification - Verify if checkbox was not checked
+					case "isnotchecked":
+						if(thisElement.isSelected()) {
+							stepStatus = new String[]{"F", "Element was checked!"};
+						}
+						break;
+						
 					// Verification - Verify if element is present or is displayed
 					case "ispresent":
 					case "isdisplayed":
@@ -466,7 +457,6 @@ public class Selenium {
 						// Wait until the element is visible on screen
 						try {
 							actionWait.until(ExpectedConditions.visibilityOf(thisElement));
-							stepStatus[0] = ".";
 						}
 						// Wait timed out, element was not present, fail the test
 						catch(Exception e) {
@@ -495,11 +485,6 @@ public class Selenium {
 							else
 								stepStatus[1] = "No text or attribute - value, was found for this element";
 						}
-						break;
-					default:
-						stepStatus[0] = "F";
-						stepStatus[1] = "No action provided!";
-						if(actionType != null) stepStatus[1] = "Could not perform --> " + actionType;
 						break;
 				}
 			}

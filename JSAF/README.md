@@ -36,6 +36,7 @@ __Version__ : 0.0.9
 	* Empty
 	* Element Present/Element Displayed
 	* Element Not Present/Element Not Displayed
+	* Element is Checked / is Not checked
 	* Hover
 	* Javascript
 	* Drag And Drop
@@ -47,6 +48,7 @@ __Version__ : 0.0.9
 	* Save - Save Text or Value attribute of an element to run-time variable
 	* SaveSelected - Save first selected option in a select box
 	* Match - Match the Text or Value of an element to stored run-time variable
+	* Equal - To check values in 2 different variables (Stored or run-time)
 	* Assert
 		* Element Text Assert
 		* Element Attribute(Value) Assert
@@ -70,8 +72,10 @@ __Version__ : 0.0.9
 * ~~Error focus in screenshot~~
 * ~~Migrate to Maven/Ant project~~ - Replaced with JAR executable
 * Email configuration for report delivery
+* Add 'Evaluate' functionality
 
 ## Change Log ##
+* __27/06/2014__ : Refactored selenium file code, added 'Equal','isChecked','isNotChecked', fixed javascript action
 * __25/06/2014__ : Added select box option saving, assert can also use run-time variable data, bug fix in run-time lookup
 * __18/06/2014__ : Error handling for missing parameter, option to skip a test step
 * __13/06/2014__ : Added selenium functions for Select box, reworked error filename, reword error message in html report, added functionality to run command to allow step removal from front & back
