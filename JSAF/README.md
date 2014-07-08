@@ -49,11 +49,12 @@ __Version__ : 0.0.9
 	* SaveSelected - Save first selected option in a select box
 	* Match - Match the Text or Value of an element to stored run-time variable
 	* Equal - To check values in 2 different variables (Stored or run-time)
+	* SwitchTo - Switches to another window
+	* GetAttribute - Saves the specified attribute of an element to a variable
 	* Assert
-		* Element Text Assert
-		* Element Attribute(Value) Assert
-		* Saved run-time variable
-		* Current Url Assert
+		* Element Text / Value Assert - Default
+		* Element Attribute Assert - MiscParams over-ride
+		* Url Assert
 
 ## Dependencies ##
 * jxl.jar - Reading and writing Excel files

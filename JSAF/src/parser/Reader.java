@@ -112,6 +112,9 @@ public class Reader {
 
 			int numberOfRows = moduleSheet.getRows();
 
+			int maxNumberOfCols = moduleSheet.getColumns();
+			if(maxNumberOfCols > 10) maxNumberOfCols = 11;
+			
 			for (int i = 1; i < numberOfRows; i++) {
 				
 				if(moduleSheet.getCell(0,i).getContents().isEmpty() == false)  {
@@ -130,16 +133,32 @@ public class Reader {
 					ArrayList<String> temp = new ArrayList<String>();
 						
 					// Test Step Name, Locator Type, Locator Value, Action, Test Data
-					temp.add(moduleSheet.getCell(1,i).getContents());
-					temp.add(moduleSheet.getCell(2,i).getContents());
-					temp.add(moduleSheet.getCell(3,i).getContents());
-					temp.add(moduleSheet.getCell(4,i).getContents());
-					if (moduleSheet.getCell(5,i).getContents().isEmpty() == false) {
-						temp.add(moduleSheet.getCell(5,i).getContents());
-					} else {
-						temp.add(null);
+					for (int j = 1; j < 6; j++) {
+						if (moduleSheet.getCell(j,i).getContents().isEmpty() == false) {
+							temp.add(moduleSheet.getCell(j,i).getContents());
+						} else {
+							temp.add("");
+						}
 					}
-						
+					
+					// Additional params
+					ArrayList<String> params = new ArrayList<String>();
+					ArrayList<String> emptyParams = new ArrayList<String>();
+					for (int j = 6; j < maxNumberOfCols; j++) {
+						if (moduleSheet.getCell(j,i).getContents().isEmpty() == false) {
+							params.add(moduleSheet.getCell(j,i).getContents());
+						} else {
+							params.add(null);
+						}
+						emptyParams.add(null);
+					}
+					
+					
+					if( !params.equals(emptyParams) ) {
+						// Append params to step
+						temp.addAll(params);
+					}
+					
 					testArray.add(temp);
 						
 					moduleContents.put(testName, testArray);

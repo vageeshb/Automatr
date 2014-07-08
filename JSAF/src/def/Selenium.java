@@ -3,6 +3,7 @@ package def;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*; 
@@ -221,292 +222,343 @@ public class Selenium {
 			return new String[]{"F", "Element with {" + locatorType + " => " + locatorValue + "}, was present on the screen."};
 		}
 	}
+	
+	public static String[] miscActions(WebDriver driver, String actionName, String actionValue, String[] miscParams) {
 		
-	/**
-	 * This method performs a selenium action on the web element.
-	 * @param driver The web driver to attach the action to
-	 * @param element The web element on which an action is to be performed
-	 * @param actionType The type of action to be performed
-	 * @param actionValue The value to be used with performing an action
-	 * @return status, message(Default = null)
-	 */
-	public static String[] action(WebDriver driver, Object element, String actionType, String actionValue) {
-
-		// Assume every step is successful, with default error message as 'Unknown action'
-		String[] stepStatus = new String[] {".", "Unknown action provided (" + actionType + ") !"};
+		// Assume every action is successful
+		String[] result = new String[] {".", null};
 		
 		try {
 
-			if(element == null) {
-				switch(actionType.toLowerCase()) {
-					// Alert handler
-					case "acceptalert":
-						Alert alert = driver.switchTo().alert();
-						alert.accept();
-				        break;
-				     // Action - Execute a JavaScript snippet
-					case "javascript":
-						// Execute JS if driver can run JS
-						if (driver instanceof JavascriptExecutor) {
-						    ((JavascriptExecutor)driver).executeScript(actionValue);
-						}
-						// Driver cant run JS, fail the step
-						else {
-							stepStatus[0] = "F";
-							stepStatus[1] = "The driver cannot handle JavaScript execution.";
-						}
-						break;
-				}
-			}
-			// Action on String Element - i.e., the element was not a web element
-			else if(element instanceof String) {
+			// Check for AJAX
+			WaitForAjax(driver);
 				
-				String strElement = (String) element;
+			// Wait for action element to be stable - Mimicking user action latency
+			Thread.sleep(500);
+			
+			// Perform action
+			switch(actionName.toLowerCase()) {
 				
-				// Check for AJAX
-				WaitForAjax(driver);
-					
-				// Wait for action element to be stable - Mimicking user action latency
-				Thread.sleep(500);
-					
-				// Perform Action
-				switch (actionType.toLowerCase()) {
-						
-					// Verification - Verify if the url matches the passed value
-					case "assert":
-						if(!strElement.equalsIgnoreCase(actionValue)) {
-							int counter = 0;
-							stepStatus[0] = "F";
-							
-							while(counter <= 50) {
-								if (driver.getCurrentUrl().equals(actionValue)) {
-									stepStatus[0] = ".";
-									break;
-								} else {
-									stepStatus[1] = "Expected: " + actionValue + ", Found: " + strElement.toString() + ".";
-									Thread.sleep(100);
-									counter++;
-								}
-							}
-						}
-						break;
+				// Alert handler
+				case "acceptalert":
+					Alert alert = driver.switchTo().alert();
+					alert.accept();
+			        break;
+			    
+			    // Action - Execute a JavaScript snippet
+				case "javascript":
+					// Execute JS if driver can run JS
+					if (driver instanceof JavascriptExecutor) {
+					    ((JavascriptExecutor)driver).executeScript(actionValue);
 					}
+					// Driver cant run JS, fail the step
+					else {
+						result = new String[]{"F", "The driver cannot handle JavaScript execution."};
+					}
+					break;
+				
+				// Switch to window
+				case "switchto":
+					String parentWindow = driver.getWindowHandle();
+					Set<String> windows = driver.getWindowHandles();
+
+		            for (String window : windows) {
+		                driver.switchTo().window(window);
+		                if (driver.getTitle().contains(actionValue)) {
+		                	result[0] = ".";
+		                    return result;
+		                }
+		            }
+		            driver.switchTo().window(parentWindow);
+		            result = new String[]{"F", "Could not locate window name - &#39;" + actionValue + "&#39;."};
+					break;
+				
+				default:
+					result = new String[]{"F", "Unknown action &#39;" + actionName + "&#39;."};
 			}
+		}
+		catch (Exception e) {
+			result = new String[]{"F", "Unexpected error for action - &#39;" + actionName + "&#39;."};
+		}
+		
+		return result;
+	}
+	
+	public static String[] stringActions(WebDriver driver, String actual, String actionName, String expected, String[] miscParams) {
+						
+		// Assume every action is successful
+		String[] result = new String[] {".", null};		
+		
+		try {
 			
-			// Action on a WebElement
-			else if (element instanceof WebElement) {
+			// Check for AJAX
+			WaitForAjax(driver);
 				
-				WebElement thisElement = (WebElement) element;
-				WebDriverWait actionWait = new WebDriverWait(driver, 10);
-				Actions action;
-				Select selectBox;
-			
-				// Check for AJAX
-				WaitForAjax(driver);
+			// Wait for action element to be stable - Mimicking user action latency
+			Thread.sleep(500);
 				
-				// Wait for action element to be stable - Mimicking user action latency
-				Thread.sleep(500);
-				
-				// Perform Action
-				switch (actionType.toLowerCase()) {
-				
-					// 	Action - Perform Input to element
-					case "input":
+			// Perform Action
+			switch (actionName.toLowerCase()) {
+					
+				// Verification - Verify if the url matches the passed value
+				case "assert":
+					if(!actual.equalsIgnoreCase(expected)) {
+						int counter = 0;
+						result[0] = "F";
 						
-						// Check if special keys were sent
-						if(actionValue.equalsIgnoreCase("ENTER")) {
-							thisElement.sendKeys(Keys.ENTER);
-						} else if(actionValue.equalsIgnoreCase("SPACE")) {
-							thisElement.sendKeys(Keys.SPACE);
-						} else if(actionValue.equalsIgnoreCase("RETURN")) {
-							thisElement.sendKeys(Keys.RETURN);
-						} 
-						// Send other key inputs
-						else {
-							// Clear the element before sending input
-							thisElement.clear();
-							thisElement.sendKeys(actionValue);
-						}
-						break;
-						
-					// Action - Perform Hover over element
-					case "hover":
-						action = new Actions(driver);
-						action.moveToElement(thisElement).build().perform();
-						Thread.sleep(500);
-						break;
-						
-					// Action - Perform Click on Element
-					case "click":
-						try {
-							// Check if element was on screen
-							/*if (thisElement.getSize() != null) {
-								thisElement.click();
-							}*/
-							if(thisElement.isDisplayed()) {
-								thisElement.click();
-							}
-							// Element was not displayed on screen
-							else {
-								((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", thisElement);
-								// Wait for element to be stable
-								Thread.sleep(1000);
-								thisElement.click();
-							}
-						}
-						catch(Exception e) {
-							if(thisElement.isDisplayed() == true) {
-								((WebElement) element).click();
-								stepStatus[0] = "W";
-								stepStatus[1] = "We waited for the element to be clickable, but its state might have changed. We clicked it anyway.";
+						while(counter <= 50) {
+							if (driver.getCurrentUrl().equals(expected)) {
+								result[0] = ".";
+								break;
 							} else {
-								stepStatus[0] = "F";
-								stepStatus[1] = "The element might not be present and hence could not be clicked!";
+								result[1] = "Expected - &#39;" + expected + "&#39;, Found - &#39;" + actual + "&#39;.";
+								Thread.sleep(100);
+								counter++;
 							}
 						}
-						break;
+					}
+					break;
 					
-					// Action - Perform Right Click
-					case "rightclick":
-						action = new Actions(driver);
-						action.moveToElement(thisElement);
-						action.contextClick(thisElement).build().perform();;
-						break;
-						
-					// Action - Perform Drag and Drop
-					case "draganddrop":
-						WebElement onElement = thisElement;
-						WebElement toElement = driver.findElement(By.xpath(actionValue));
-						action = new Actions(driver);
-						action.clickAndHold(onElement);
-						Thread.sleep(500);
-						action.moveToElement(toElement);
-						Thread.sleep(500);
-						action.release();
-						action.perform();
-						break;
-						
-					// Action - Perform Clear on element
-					case "clear":
-						thisElement.clear();
-						break;
-						
-					// Action - Perform Select by Text on Select Box
-					case "selectbytext":
-						selectBox = new Select(thisElement);
-						selectBox.selectByVisibleText(actionValue);
-						break;
-					
-					// Action - Perform Select by Index on Select Box
-					case "selectbyindex":
-						selectBox = new Select(thisElement);
-						selectBox.selectByIndex(Integer.parseInt(actionValue));
-						break;
-
-					// Action - Perform Select by Value on Select Box
-					case "selectbyvalue":
-						selectBox = new Select(thisElement);
-						selectBox.selectByValue(actionValue);
-						break;
-						
-					// Action - Save the value of the element
-					case "save":
-						if(thisElement.getText() != null && !thisElement.getText().isEmpty()) { 
-							stepStatus[1] = thisElement.getText();
-						} 
-						else if(thisElement.getAttribute("value") != null && !thisElement.getAttribute("value").isEmpty()) {
-							stepStatus[1] = thisElement.getAttribute("value");
-						}
-						else {
-							stepStatus[0] = "F";
-							stepStatus[1] = "The element - " + thisElement.toString() + " , has no text or value attribute.";
-						}
-						break;
-						
-					// Action - Save first selected option
-					case "saveselected":
-						stepStatus[1] = (new Select (thisElement)).getFirstSelectedOption().getText();
-						break;
-
-					// Verification - Verify if element is element
-					case "isempty":
-						if(!thisElement.getText().isEmpty()) {
-							stepStatus[0] = "F";
-							stepStatus[1] = "Expected the element to be empty, instead found - " + thisElement.getText() + ".";
-						}
-						break;
-					
-					// Verification - Verify if checkbox was checked
-					case "ischecked":
-						if(!thisElement.isSelected()) {
-							stepStatus = new String[]{"F", "Element was not checked!"};
-						}
-						break;
-					
-					// Verification - Verify if checkbox was not checked
-					case "isnotchecked":
-						if(thisElement.isSelected()) {
-							stepStatus = new String[]{"F", "Element was checked!"};
-						}
-						break;
-						
-					// Verification - Verify if element is present or is displayed
-					case "ispresent":
-					case "isdisplayed":
-						
-						// Wait until the element is visible on screen
-						try {
-							actionWait.until(ExpectedConditions.visibilityOf(thisElement));
-						}
-						// Wait timed out, element was not present, fail the test
-						catch(Exception e) {
-							stepStatus[0] = "F";
-							stepStatus[1] = "The element - " + element.toString() + " , is not displayed/present on the page.";
-						}
-						break;
-						
-					// Verification - Verify if element has the same value as passed
-					case "match":
-					case "assert":
-						if(thisElement.getText() != null && thisElement.getText().contains(actionValue)) { 
-							stepStatus[0] = ".";
-						} 
-						else if(thisElement.getAttribute("value") != null && thisElement.getAttribute("value").contains(actionValue)) {
-							stepStatus[0] = ".";
-						}
-						else {
-							stepStatus[0] = "F";
-							if (thisElement.getText() == null && thisElement.getAttribute("value") != null)
-								stepStatus[1] = "Expected: |" + actionValue + "|, Found: |" + thisElement.getAttribute("value") + "|.";
-							else if(thisElement.getText() != null && thisElement.getAttribute("value") == null)
-								stepStatus[1] = "Expected: |" + actionValue + "|, Found: |" + thisElement.getText() + "|.";
-							else if (thisElement.getText() != null && thisElement.getAttribute("value") != null)
-								stepStatus[1] = "Expected: |" + actionValue + "|, Found: Text - |" + thisElement.getText() + "|, Value - |" + thisElement.getAttribute("value") + "|.";
-							else
-								stepStatus[1] = "No text or attribute - value, was found for this element";
-						}
-						break;
+				default:
+					result = new String[]{"F", "Unknown action &#39;" + actionName + "&#39;."};
 				}
-			}
+		}
+		catch(Exception e) {
+			result = new String[]{"F", "Unexpected error for action - &#39;" + actionName + "&#39;."};
+		}
+		
+		return result;
+	}
+	/**
+	 * This method performs a selenium action on the web element.
+	 * @param driver The web driver to attach the action to
+	 * @param webElement The web element on which an action is to be performed
+	 * @param actionName The type of action to be performed
+	 * @param actionValue The value to be used with performing an action
+	 * @return status, message(Default = null)
+	 */
+	public static String[] elementActions(WebDriver driver, WebElement webElement, String actionName, String actionValue, String[] miscParams) {
+
+		// Assume every step is successful
+		String[] result = new String[] {".", null};
+		
+		WebDriverWait actionWait = new WebDriverWait(driver, 10);
+		Actions action;
+		Select selectBox;
+		
+		try {
+
+			// Check for AJAX
+			WaitForAjax(driver);
 			
-			// Unknown element type - Fail it
-			else {
-				stepStatus[0] = "F";
-				stepStatus[1] = "Unknown element type - ";
-				if(actionType != null) stepStatus[1] += "Could not perform --> [" + actionType + "] for element [" + element.toString() + "].";
+			// Wait for action element to be stable - Mimicking user action latency
+			Thread.sleep(500);
+			
+			// Perform Action
+			switch (actionName.toLowerCase()) {
+			
+				// 	Action - Perform Input to element
+				case "input":
+					
+					// Check if special keys were sent
+					if(actionValue.equalsIgnoreCase("ENTER")) {
+						webElement.sendKeys(Keys.ENTER);
+					} else if(actionValue.equalsIgnoreCase("SPACE")) {
+						webElement.sendKeys(Keys.SPACE);
+					} else if(actionValue.equalsIgnoreCase("RETURN")) {
+						webElement.sendKeys(Keys.RETURN);
+					} 
+					// Send other key inputs
+					else {
+						// Clear the element before sending input
+						webElement.clear();
+						webElement.sendKeys(actionValue);
+					}
+					break;
+					
+				// Action - Perform Hover over element
+				case "hover":
+					action = new Actions(driver);
+					action.moveToElement(webElement).build().perform();
+					Thread.sleep(500);
+					break;
+					
+				// Action - Perform Click on Element
+				case "click":
+					try {
+						// Check if element was on screen
+						/*if (thisElement.getSize() != null) {
+							thisElement.click();
+						}*/
+						if(webElement.isDisplayed()) {
+							webElement.click();
+						}
+						// Element was not displayed on screen
+						else {
+							((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", webElement);
+							// Wait for element to be stable
+							Thread.sleep(1000);
+							webElement.click();
+						}
+					}
+					catch(Exception e) {
+						if(webElement.isDisplayed() == true) {
+							((WebElement) webElement).click();
+							result = new String[]{"W", "We waited for the element to be clickable, but its state might have changed. We clicked it anyway."};
+						} else {
+							result = new String[]{"F", "The element might not be present and hence could not be clicked!"};
+						}
+					}
+					break;
+				
+				// Action - Perform Right Click
+				case "rightclick":
+					action = new Actions(driver);
+					action.moveToElement(webElement);
+					action.contextClick(webElement).build().perform();;
+					break;
+					
+				// Action - Perform Drag and Drop
+				case "draganddrop":
+					WebElement onElement = webElement;
+					WebElement toElement = driver.findElement(By.xpath(actionValue));
+					action = new Actions(driver);
+					action.clickAndHold(onElement);
+					Thread.sleep(500);
+					action.moveToElement(toElement);
+					Thread.sleep(500);
+					action.release();
+					action.perform();
+					break;
+					
+				// Action - Perform Clear on element
+				case "clear":
+					webElement.clear();
+					break;
+					
+				// Action - Perform Select by Text on Select Box
+				case "selectbytext":
+					selectBox = new Select(webElement);
+					selectBox.selectByVisibleText(actionValue);
+					break;
+				
+				// Action - Perform Select by Index on Select Box
+				case "selectbyindex":
+					selectBox = new Select(webElement);
+					selectBox.selectByIndex(Integer.parseInt(actionValue));
+					break;
+
+				// Action - Perform Select by Value on Select Box
+				case "selectbyvalue":
+					selectBox = new Select(webElement);
+					selectBox.selectByValue(actionValue);
+					break;
+					
+				// Action - Save the value of the element
+				case "save":
+					if(webElement.getText() != null && !webElement.getText().isEmpty()) { 
+						result[1] = webElement.getText();
+					} 
+					else if(webElement.getAttribute("value") != null && !webElement.getAttribute("value").isEmpty()) {
+						result[1] = webElement.getAttribute("value");
+					}
+					else {
+						result = new String[]{"F", "The element - " + webElement.toString() + " , has no text or value attribute."};
+					}
+					break;
+					
+				// Action - Save first selected option
+				case "saveselected":
+					result[1] = (new Select (webElement)).getFirstSelectedOption().getText();
+					break;
+
+				// Verification - Verify if element is element
+				case "isempty":
+					if(!webElement.getText().isEmpty()) {
+						result = new String[]{"F", "Expected the element to be empty, instead found - " + webElement.getText() + "."};
+					}
+					break;
+				
+				// Verification - Verify if checkbox was checked
+				case "ischecked":
+					if(!webElement.isSelected()) {
+						result = new String[]{"F", "Element was not checked!"};
+					}
+					break;
+				
+				// Verification - Verify if checkbox was not checked
+				case "isnotchecked":
+					if(webElement.isSelected()) {
+						result = new String[]{"F", "Element was checked!"};
+					}
+					break;
+					
+				// Verification - Verify if element is present or is displayed
+				case "ispresent":
+				case "isdisplayed":
+					
+					// Wait until the element is visible on screen
+					try {
+						actionWait.until(ExpectedConditions.visibilityOf(webElement));
+					}
+					// Wait timed out, element was not present, fail the test
+					catch(Exception e) {
+						result = new String[]{"F", "The element - " + webElement.toString() + " , is not displayed/present on the page."};
+					}
+					break;
+					
+				// Verification - Verify if element has the same value as passed
+				case "match":
+				case "assert":
+					String expected = actionValue;
+					if(miscParams == null) {
+						String actual = webElement.getText();
+						result = localAssert(expected, actual);
+						if(result[0] != ".") {
+							actual = webElement.getAttribute("value");
+							result = localAssert(expected, actual);
+						}
+					} else {
+						String actual = null;
+						switch(miscParams[0].toLowerCase()) {
+							case "attribute":
+								actual = webElement.getAttribute(miscParams[1]);
+								break;
+						}
+						result = localAssert(expected, actual);
+					}
+					break;
+				
+				// Attribute related
+				case "getattribute":
+					result = new String[]{".", webElement.getAttribute(miscParams[0])};
+					break;
+					
+				// Default
+				default:
+					result = new String[]{"F", "Unknown action &#39;" + actionName + "&#39;."};
+					break;
 			}
 		}
 		catch(Exception e) {
-			stepStatus[0] = "F";
-			if(e.getMessage() != null)
-				stepStatus[1] = e.getMessage(); //.split(":")[0].toString();
-			else
-				stepStatus[1] = "Unexpected Error";
+			result = new String[]{"F", "Unexpected error for action - &#39;" + actionName + "&#39;."};
 		}
 		
-		return stepStatus;
+		return result;
 	}
 	
+	private static String[] localAssert(String expected, String actual) {
+		if( expected == null || actual == null || expected.equals("") || actual.equals("")) {
+			return new String[]{"F", "One of the assertion values is null, please re-check the step inputs."};
+		} 
+		else {
+			if ( expected.contains(actual) || actual.contains(expected) ) {
+				return new String[]{".", null};
+			} else {
+				return new String[]{"F", "Expected - &#39;" + expected + "&#39;, Found - &#39;" + actual + "&#39;."};
+			}
+		}
+	}
 	/**
 	 * This method take a screenshot and saves it in a temporary folder (/temp)
 	 * @param driver WebDriver to take screenshot with

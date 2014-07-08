@@ -36,6 +36,43 @@ public class Executor {
 	private static HashMap<String, ArrayList<String[]>> testStatuses;
 	private static HashMap<String, HashMap<String, ArrayList<String[]>>> status = new HashMap<String, HashMap<String, ArrayList<String[]>>>();
 	
+	
+	/**
+	 * This method finds a web element and dispatches a call for action on this element
+	 * @param locatorType [String] {The locator type to identify the locating method}
+	 * @param locatorValue [String] {The locator value to provide to locating method}
+	 * @param stepDataValue [String] {The data value to be utilised by action}
+	 * @param stepAction [String] {The type of action to be performed}
+	 * @param miscParams [String[]] {Array of misc params to be utilised by the action method}
+	 * @return actionResult [String[2]] {An array of result with status and err message/data value if any}
+	 */
+	private static String[] handleWebElementAction(String locatorType, String locatorValue, String stepDataValue, String stepAction, String[] miscParams) {
+		
+		// Check for Locator Inputs
+		if( locatorType == "" ) {
+			return new String[]{"F", "Cannot find web element without Locator Type!"};
+		}
+		else if( locatorValue == "" ) {
+			return new String[]{"F", "Cannot find web element without Locator Value!"};
+		}
+		else {
+			Object element = Selenium.find(driver, locatorType, locatorValue, null);
+			
+			// Element not found
+			if (element == null) {
+				return new String[] {"F", "Could not locate element with { &#39;" + locatorType + "&#39; = &#39;" + locatorValue + "&#39; }."};
+			}
+			// Element was found
+			else if(element instanceof RemoteWebElement || element instanceof WebElement){
+				// Perform action step
+				return Selenium.elementActions(driver, (WebElement)element, stepAction, stepDataValue, miscParams);
+			} else {
+				return new String[] {"F", "There is a problem at this step. Could not identify the element type."};
+			}
+		}
+		
+	}
+	
 	/**
 	 * This method executes a test step either by finding an element and performing action or by assertion.
 	 * @param testStep Should contain [Step Name, Locator Type, Locator Value, Action, Data Value]
@@ -45,66 +82,90 @@ public class Executor {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private static String[] executeTestStep(Object testStep) throws IOException, InterruptedException {
 		
-		// Convert testStep to ArrayList to String Array
-		ArrayList temp = (ArrayList)testStep;
-		String [] step = (String[]) temp.toArray(new String[temp.size()]);
+		// Declare variables
+		Object element;
+		String stepName, stepAction, stepDataValue, stepLocatorType, stepLocatorValue;
+		String[] stepArray, actionResult, stepResult, miscParams;
+		int stepReduction;
+		
+		// Initialize step array
+		stepArray = (String[]) ((ArrayList)testStep).toArray(new String[((ArrayList)testStep).size()]);
 		
 		// Assume that by default, every action is a success
-		String[] actionResult = new String[] {".", null};
-		String[] stepResult = new String[4];
-		
-		// Declare common variables
-		Object element = new Object();
-		String stepAction = null;
-		String stepDataValue = null;
-		String locatorType = step[1];
-		String locatorValue = step[2];
-		int stepReduction = 0;
+		actionResult = new String[] {".", null};
+		stepResult = new String[4];
 		
 		// Initialize Status
-		stepResult[0] = step[0];
+		stepResult[0] = stepArray[0];
 		stepResult[2] = Utils.now("dd/MM/yyyy HH:mm:ss:S");
 		
-		// Initialize step variables
-		String stepName = step[0];
-		
 		// Check to see if step was to be skipped
-		if(stepName.startsWith("//")) {
+		if(stepArray[0].startsWith("//")) {
 			stepResult[1] = "SKIP";
 			stepResult[3] = Utils.now("dd/MM/yyyy HH:mm:ss:S");
 			System.out.print("S");
 			return stepResult;
 		}
 		
-		// Get action type
-		if(step[3] != null) 
-			stepAction = step[3];
-		else
-			stepAction = null;
+		// ========================================================================================================================
+		// INITIALIZE STEP ACTION VARIABLES
+		// ========================================================================================================================
+			
+			stepName = stepArray[0];
+			stepLocatorType = stepArray[1];
+			stepLocatorValue = stepArray[2];
+			stepAction = stepArray[3];
+			
+			// Step Test Data
+			if( stepArray[4] != "" ) {
+				// Lookup in Test Data
+				if ( testData.get(stepArray[4]) != null ) stepDataValue = testData.get(stepArray[4]);
+				// Lookup in Runtime Hash
+				else if ( runTimeHash.get(stepArray[4]) != null ) stepDataValue = runTimeHash.get(stepArray[4]);
+				// Assign directly
+				else stepDataValue = stepArray[4];
+			} else {
+				stepDataValue = "";
+			}
+			
+			// Miscellaneous Parameters
+			miscParams = null;
+			if(stepArray.length - 5 > 0) {
+				miscParams = new String[5];
+				for (int i = 5, j = 0; i < stepArray.length; i++, j++) {
+					miscParams[j] = stepArray[i];
+				}
+			}
+			
+			element = new Object();
+			
+			stepReduction = 0;
 		
-		// Get Test Data value, if found in Test_Data hash
-		if( step[4] != null ) {
-			if ((String) testData.get(step[4]) != null)
-				stepDataValue = (String) testData.get(step[4]);
-			else if (runTimeHash.get(step[4]) != null)
-				stepDataValue = (String) runTimeHash.get(step[4]);
-			else
-				stepDataValue = step[4];
-		}
+		// ========================================================================================================================
+		// END OF INITIALIZE STEP ACTION VARIABLES
+		// ========================================================================================================================
 		
+		// ========================================================================================================================
+		// PERFORM ACTION
+		// ========================================================================================================================
 		switch(stepAction.toLowerCase()) {
-
-			// Run another self contained test as a part of this test
+			
+			// ====================================================================================================================
+			// UTILITY FUNCTIONS
+			// ====================================================================================================================
+		
+			// Running another test within a test
 			case "run":
+				
 				// Get contained test and its test steps
-				HashMap containedTest = (HashMap)allTestsHash.get(locatorType);
-				ArrayList<String[]> containedTestSteps = (ArrayList<String[]>)((ArrayList<String[]>)(containedTest).get(locatorValue)).clone();
+				HashMap containedTest = (HashMap)allTestsHash.get(stepLocatorType);
+				ArrayList<String[]> containedTestSteps = (ArrayList<String[]>)((ArrayList<String[]>)(containedTest).get(stepLocatorValue)).clone();
 				
 				// Catcher for Parse Exception
 				try {
 					
 					// Check if step reduction over-ride provided
-					if(stepDataValue != null) {
+					if(stepDataValue != "") {
 						
 						stepReduction = (Integer.parseInt(stepDataValue));
 						
@@ -137,44 +198,71 @@ public class Executor {
 				} catch (Exception e) {
 					actionResult = new String[] {"F", "Test Step Data Value is not a whole number."};
 				}
+				
 				break;
 				
-			// Assertion step
-			case "assert":
-				
-				if(locatorType == null)
-					actionResult = new String[] {"F", "Unable to locate element without locator type. Please recheck your step."};
-				else {
-					if (locatorType.equalsIgnoreCase("url"))
-						actionResult = Selenium.action(driver, locatorType, stepAction, stepDataValue);
-					else {
-						// Find web element
-						element = Selenium.find(driver, locatorType, locatorValue, null);
-						
-						actionResult = Selenium.action(driver, element, stepAction, stepDataValue);
-					}
-				}
-				break;
-			
-			// Evaluate
+			// Evaluation
 			case "evaluate":
 				// TODO
 				break;
 			
-			// Verification - Match 2 stored values or 2 strings
-			case "equal":
-				if(locatorValue != null && stepDataValue != null) {
-					if(locatorValue.contains(stepDataValue) || stepDataValue.contains(locatorValue)) {
-						actionResult[0] = ".";
-					}
+			// Wait
+			case "wait":
+				Thread.sleep(Integer.parseInt(stepDataValue) * 100);
+				break;
+			
+			// Print
+			case "print":
+				if( stepDataValue != "" )
+					System.out.print(stepDataValue);
+				else
+					System.out.print("Please provide a valid input to print!");
+				break;
+				
+			// ====================================================================================================================
+			// END OF UTILITY FUNCS
+			// ====================================================================================================================
+			
+			// ====================================================================================================================
+			// ASSERTION/VERIFICATION RELATED FUNCS
+			// ====================================================================================================================
+		
+			// Assertion
+			case "assert":
+				
+				if(stepLocatorType == "")
+					actionResult = new String[] {"F", "Unable to locate element without locator type. Please recheck your step."};
+				else {
+					if (stepLocatorType.equalsIgnoreCase("url"))
+						actionResult = Selenium.stringActions(driver, stepLocatorType, stepAction, stepDataValue, miscParams);
 					else {
-						actionResult = new String[]{"F", "Expected |" + stepDataValue + "|, Actual |" + locatorValue + "|."};
+						
+						actionResult = handleWebElementAction(stepLocatorType, stepLocatorValue, stepDataValue, stepAction, miscParams);
 					}
 				}
-				else if (locatorValue != null && stepDataValue == null) {
-					actionResult = new String[]{"F", "RHS value missing, cannot perform ( '" + locatorValue + "' == null )."};
+				break;
+			
+			// Equality
+			case "equal":
+				
+				if(stepLocatorValue != "" && stepDataValue != "") {
+					// Lookups for Stored Values
+					// Test Data Lookup
+					if(testData.get(stepLocatorValue) != null) stepLocatorValue = testData.get(stepLocatorValue);
+					
+					// Run Time Lookup
+					if(runTimeHash.get(stepLocatorValue) != null) stepLocatorValue = runTimeHash.get(stepLocatorValue);
+					
+					// Equality Check
+					if(!stepLocatorValue.contains(stepDataValue) && !stepDataValue.contains(stepLocatorValue)) {
+						actionResult = new String[]{"F", "Expected &#39;" + stepDataValue + "&#39;, Actual &#39;" + stepLocatorValue + "|."};
+					}
+				}
+				// Handlers for incorrect equation
+				else if (stepLocatorValue != "" && stepDataValue == "") {
+					actionResult = new String[]{"F", "RHS value missing, cannot perform ( '" + stepLocatorValue + "' == null )."};
 				} 
-				else if(locatorValue == null && stepDataValue != null) {
+				else if(stepLocatorValue == "" && stepDataValue != "") {
 					actionResult = new String[]{"F", "LHS value missing, cannot perform ( null == '" + stepDataValue + "' )"};
 				}
 				else {
@@ -182,41 +270,115 @@ public class Executor {
 				}
 				break;
 				
-			// JAVASCRIPT
-			case "javascript":
-				actionResult = Selenium.action(driver, null, stepAction, stepDataValue);
+			// Inequality
+			case "notequal":
+				
+				if (stepLocatorValue != "" && stepDataValue != "") {
+					// Lookups for Stored Values
+					// Test Data Lookup
+					if(testData.get(stepLocatorValue) != null) stepLocatorValue = testData.get(stepLocatorValue);
+					
+					// Run Time Lookup
+					if(runTimeHash.get(stepLocatorValue) != null) stepLocatorValue = runTimeHash.get(stepLocatorValue);
+					
+					// Inequality Check
+					if(stepLocatorValue.contains(stepDataValue) || stepDataValue.contains(stepLocatorValue)) {
+						actionResult = new String[]{"F", "Expected &#39;" + stepDataValue + "&#39;, Actual &#39;" + stepLocatorValue + "|."};
+					}
+				}
+				// Handlers for incorrect equation
+				else if (stepLocatorValue != "" && stepDataValue == "") {
+					actionResult = new String[]{"F", "RHS value missing, cannot perform ( &#39;" + stepLocatorValue + "&#39; == null )."};
+				} 
+				else if (stepLocatorValue == "" && stepDataValue != "") {
+					actionResult = new String[]{"F", "LHS value missing, cannot perform ( null == &#39;" + stepDataValue + "&#39; )"};
+				}
+				else {
+					actionResult = new String[]{"F", "Both hand-side value missing, cannot perform equal assertion."};
+				}
 				break;
 				
-			// Wait
-			case "wait":
-				Thread.sleep(Integer.parseInt(stepDataValue) * 100);
-				break;
-				
-			// Closing Driver
+			// ========================================================================================================================
+			// END OF ASSERTION/VERIFICATION RELATED FUNCS
+			// ========================================================================================================================
+		
+			// ========================================================================================================================
+			// DRIVER RELATED FUNCS
+			// ========================================================================================================================
+		
+			// Close Driver
 			case "close":
 				driver.close();
 				driver.quit();
 				driver = null;
 				break;
 			
-			// Open and get URL
+			// Open Driver and get URL
 			case "open/get":
 				driver = Selenium.initDriver(stepDataValue, config[1]);
 				break;
 				
-			// Open Browser
+			// Open Driver
 			case "open":
 				driver = Selenium.initDriver(null, config[1]);
 				break;
+			
+			// Get URL
+			case "get":
+				driver.get(stepDataValue);
+				break;
+			
+			// Alert handle
+			case "acceptalert":
+				actionResult = Selenium.miscActions(driver, stepAction, null, miscParams);
+				break;
+			
+			// Execute JAVASCRIPT
+			case "javascript":
+				actionResult = Selenium.miscActions(driver, stepAction, stepDataValue, miscParams);
+				break;
+			
+			// Switch to driver window
+			case "switchto":
+				actionResult = Selenium.miscActions(driver, stepAction, stepDataValue, miscParams);
+				break;
+					
+			// ========================================================================================================================
+			// END OF DRIVER RELATED FUNCS
+			// ========================================================================================================================
+					
+			// ========================================================================================================================
+			// WEB ELEMENT RELATED FUNCS
+			// ========================================================================================================================
 				
-			case "count":
+			// Element not displayed or not present
+			case "isnotdisplayed":
+			case "isnotpresent":
+				actionResult = Selenium.isNotDisplayed(driver, stepLocatorType, stepLocatorValue);
+				break;
 				
+			// Runtime data save
+			case "save":
+			case "saveselected":
+				
+				actionResult = handleWebElementAction(stepLocatorType, stepLocatorValue, stepDataValue, stepAction, miscParams);
+				
+				// If action was succesfull, store the value to a hash
+				if(actionResult[0].equals(".")) {
+					if(runTimeHash.get(stepDataValue) != null) {
+						runTimeHash.remove(stepDataValue);
+					}
+					runTimeHash.put(stepDataValue, actionResult[1]);
+				}
+				break;
+			
+			// Count number of elements
+			case "count":	
 				int localCounter = 0;
 				
 				while(true) {
-					
 					// Find web elements
-					List<WebElement> elementList = Selenium.findElements(driver, locatorType, locatorValue);
+					List<WebElement> elementList = Selenium.findElements(driver, stepLocatorType, stepLocatorValue);
 					
 					// Verify Element Count
 					if(elementList != null && elementList.size() == Integer.parseInt(stepDataValue)) {
@@ -228,108 +390,62 @@ public class Executor {
 					
 					if(localCounter == 50) {
 						if(elementList == null)
-							actionResult = new String[] {"F", "Expected number of elements - " + stepDataValue + ", but found - 0."};
+							actionResult = new String[] {"F", "Expected number of elements - &#39;" + stepDataValue + "&#39;, but found - 0."};
 						else if (elementList.size() != Integer.parseInt(stepDataValue))
-							actionResult = new String[] {"F","Expected number of elements - " + stepDataValue + ", but found - " + elementList.size() + "."};
+							actionResult = new String[] {"F","Expected number of elements - &#39;" + stepDataValue + "&#39;, but found - &#39;" + elementList.size() + "&#39;."};
 						break;
 					}
 				}
 				
 				break;
-				
-			// Get URL
-			case "get":
-				driver.get(stepDataValue);
-				break;
+			
+			// Element attribute related
+			case "getattribute":
+				actionResult = handleWebElementAction(stepLocatorType, stepLocatorValue, stepDataValue, stepAction, miscParams);
 
-			// Web Element Related - Negative
-			case "isnotdisplayed":
-			case "isnotpresent":
-				actionResult = Selenium.isNotDisplayed(driver, locatorType, locatorValue);
-				break;
-				
-			// Web Element Related - Run time data match (Save and Match)
-			case "save":
-			case "saveselected":
-				// Find web element
-				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
-
-				// Element not found
-				if (element == null) {
-					actionResult = new String[] {"F", "Could not locate element with { &#39;" + locatorType + "&#39; = &#39;" + locatorValue + "&#39; }."};
-				}
-				// Element was found
-				else {
-					// Perform action step
-					actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
-					
-					// If action was succesfull, store the value to a hash
-					if(actionResult[0].equals(".")) {
-						if(runTimeHash.get(stepDataValue) != null) {
-							runTimeHash.remove(stepDataValue);
-						}
-						runTimeHash.put(stepDataValue, actionResult[1]);
+				// If action was succesfull, store the value to a hash
+				if(actionResult[0].equals(".")) {
+					if(runTimeHash.get(stepDataValue) != null) {
+						runTimeHash.remove(stepDataValue);
 					}
-				} 
-				break;
-			case "match":
-				// Find web element
-				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
-
-				// Element not found
-				if (element == null) {
-					actionResult = new String[] {"F", "Could not locate element with { &#39;" + locatorType + "&#39; = &#39;" + locatorValue + "&#39; }."};;
+					runTimeHash.put(stepDataValue, actionResult[1]);
 				}
-				// Element was found
-				else {
-					if(stepDataValue != null) {
-						// Perform action step
-						actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
-					}
-					// Invalid run time variable name was given
-					else {
-						actionResult = new String[] {"F","Could not look up the value of run-time variable [" + stepDataValue + "]."};
-					}
-				} 
 				break;
 				
-			// Alert handle
-			case "acceptalert":
-				actionResult = Selenium.action(driver, null, stepAction, null);
+			case "assertattribute":
+				actionResult = handleWebElementAction(stepLocatorType, stepLocatorValue, stepDataValue, stepAction, miscParams);
 				break;
 				
-			// Web Element Related - Positive
-			case "isdisplayed":
-			case "ispresent":
-			case "isempty":
-			case "click":
-			case "rightclick":
-			case "input":
-			case "hover":
-			case "clear":
-			case "draganddrop":
-			case "selectbyvalue":
-			case "selectbyindex":
-			case "selectbytext":
-			case "ischecked":
-			case "isnotchecked":
-				// Find web element
-				element = Selenium.find(driver, locatorType, locatorValue, stepDataValue);
-
-				// Element not found
-				if (element == null) {
-					actionResult = new String[] {"F", "Could not locate element with { &#39;" + locatorType + "&#39; = &#39;" + locatorValue + "&#39; }."};;
-				}
-				// Element was found
-				else if(element instanceof RemoteWebElement || element instanceof WebElement){
-					// Perform action step
-					actionResult = Selenium.action(driver, (WebElement)element, stepAction, stepDataValue);
-				} else {
-					actionResult = new String[] {"F", "There is a problem at this step. Could not identify the element type."};
-				}
-				break;
+			// General purpose
+				case "isdisplayed":
+				case "ispresent":
+				case "isempty":
+				case "hover":
+			// Link/Button related
+				case "click":
+				case "rightclick":
+			// Multi-element
+				case "draganddrop":
+			// Input box related
+				case "input":
+				case "clear":
+			// Select box related
+				case "selectbyvalue":
+				case "selectbyindex":
+				case "selectbytext":
+			// Check box related
+				case "ischecked":
+				case "isnotchecked":
+			// Runtime Data Match
+				case "match":
+					actionResult = handleWebElementAction(stepLocatorType, stepLocatorValue, stepDataValue, stepAction, miscParams);
+					break;
+			// ========================================================================================================================
+			// END OF WEB ELEMENT RELATED FUNCS
+			// ========================================================================================================================
+				
 			default:
-				actionResult = new String[] {"F", "There is a problem at this step. Could not identify the element type or action type."};
+				actionResult = new String[] {"F", "Unknown Action Type - &#39;" + stepAction + "&#39; specified, please read the documentation for possible actions."};
 				break;
 		}
 		
