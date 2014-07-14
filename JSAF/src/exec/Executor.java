@@ -31,6 +31,7 @@ public class Executor {
 	private static HashMap allTestsHash;
 	private static HashMap<String, String> runTimeHash = new HashMap<String, String>();
 	private static WebDriver driver;
+	private static String parentWindowHandle;
 	private static String currentModule;
 	private static String currentTest;
 	private static HashMap<String, ArrayList<String[]>> testStatuses;
@@ -116,12 +117,13 @@ public class Executor {
 			stepLocatorValue = stepArray[2];
 			stepAction = stepArray[3];
 			
+			// TODO: Check of variable lookup conflicts
 			// Step Test Data
 			if( stepArray[4] != "" ) {
-				// Lookup in Test Data
-				if ( testData.get(stepArray[4]) != null ) stepDataValue = testData.get(stepArray[4]);
 				// Lookup in Runtime Hash
-				else if ( runTimeHash.get(stepArray[4]) != null ) stepDataValue = runTimeHash.get(stepArray[4]);
+				if ( runTimeHash.get(stepArray[4]) != null ) stepDataValue = runTimeHash.get(stepArray[4]);
+				// Lookup in Test Data
+				else if ( testData.get(stepArray[4]) != null ) stepDataValue = testData.get(stepArray[4]);
 				// Assign directly
 				else stepDataValue = stepArray[4];
 			} else {
@@ -201,11 +203,6 @@ public class Executor {
 				
 				break;
 				
-			// Evaluation
-			case "evaluate":
-				// TODO
-				break;
-			
 			// Wait
 			case "wait":
 				Thread.sleep(Integer.parseInt(stepDataValue) * 100);
@@ -229,7 +226,7 @@ public class Executor {
 		
 			// Assertion
 			case "assert":
-				
+			case "assertfalse":
 				if(stepLocatorType == "")
 					actionResult = new String[] {"F", "Unable to locate element without locator type. Please recheck your step."};
 				else {
@@ -241,7 +238,7 @@ public class Executor {
 					}
 				}
 				break;
-			
+				
 			// Equality
 			case "equal":
 				
@@ -309,10 +306,12 @@ public class Executor {
 			// Close Driver
 			case "close":
 				driver.close();
+				break;
+			// Quit Driver
+			case "quit":
 				driver.quit();
 				driver = null;
 				break;
-			
 			// Open Driver and get URL
 			case "open/get":
 				driver = Selenium.initDriver(stepDataValue, config[1]);
@@ -341,6 +340,39 @@ public class Executor {
 			// Switch to driver window
 			case "switchto":
 				actionResult = Selenium.miscActions(driver, stepAction, stepDataValue, miscParams);
+				break;
+				
+			case "switchtoparent":
+				driver.switchTo().window(parentWindowHandle);
+				break;
+			
+			// Evaluate an expression
+			case "evaluate":
+				String expression = miscParams[0];
+				String newExpression = "";
+				expression = expression.replaceAll("\\s","");
+				String[] t = expression.split("(?<=[-+*/()])|(?=[-+*/()])");
+				for (int i = 0; i < t.length; i++) {
+					String variable = t[i];
+					if( runTimeHash.get(variable) != null ) {
+						newExpression += runTimeHash.get(variable);
+					}
+					else if( testData.get(variable) != null ) {
+						newExpression += testData.get(variable);
+					}
+					else {
+						newExpression += variable;
+					}
+
+				}
+				miscParams[0] = (!newExpression.equals("")) ? newExpression : miscParams[0];
+				actionResult = Selenium.miscActions(driver, stepAction, stepDataValue, miscParams);
+				if(actionResult[0].equals(".")) {
+					if(runTimeHash.get(stepDataValue) != null) {
+						runTimeHash.remove(stepDataValue);
+					}
+					runTimeHash.put(stepDataValue, actionResult[1]);
+				}
 				break;
 					
 			// ========================================================================================================================
@@ -421,6 +453,7 @@ public class Executor {
 				case "ispresent":
 				case "isempty":
 				case "hover":
+				case "send":
 			// Link/Button related
 				case "click":
 				case "rightclick":
@@ -463,7 +496,7 @@ public class Executor {
 			
 			// Write to console
 			System.out.print(actionResult[0].toUpperCase());
-			
+			//System.out.println(actionResult[1]);
 			// Assign step status
 			if(actionResult[0].equalsIgnoreCase("f"))
 				stepResult[1] = "FAIL: " + actionResult[1];
@@ -503,6 +536,7 @@ public class Executor {
 		if(openDriver == true) {
 			runTimeHash = new HashMap<String, String>();
 			driver = Selenium.initDriver(config[0], config[1]);
+			parentWindowHandle = driver.getWindowHandle();
 		}
 		
 		for(Object testStep: test) {
@@ -580,8 +614,10 @@ public class Executor {
 				
 				// Get test steps of this test
 				ArrayList testSteps = (ArrayList)((HashMap)testsHash.get(moduleName)).get(test);
-				
-				executeTest(test, testSteps, true);
+				if(testSteps != null && testSteps.size() > 0)
+					executeTest(test, testSteps, true);
+				else
+					System.out.println("No test steps found for this test case. Please re-check!! Skipping ahead.");
 				
 			}
 			

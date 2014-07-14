@@ -28,30 +28,39 @@ __Version__ : 0.0.9
 	* Find (Waits upto 5 seconds for the element to be present)
 	* Find Elements (Finds all elements matching the criteria)
 * Can perform below selenium actions:
-	* Wait
-	* Input
-	* Click / Check
-	* Right Click
-	* Clear
-	* Empty
-	* Element Present/Element Displayed
-	* Element Not Present/Element Not Displayed
-	* Element is Checked / is Not checked
-	* Hover
-	* Javascript
-	* Drag And Drop
-	* Select Box Specific Functions
-		* SelectByText
-		* SelectByValue
-		* SelectByIndex
-	* Run (Run another test case)
-	* Save - Save Text or Value attribute of an element to run-time variable
-	* SaveSelected - Save first selected option in a select box
-	* Match - Match the Text or Value of an element to stored run-time variable
-	* Equal - To check values in 2 different variables (Stored or run-time)
-	* SwitchTo - Switches to another window
-	* GetAttribute - Saves the specified attribute of an element to a variable
-	* Assert
+	* General Functions:
+		* Wait
+		* Javascript
+		* Run (Run another test case)
+		* SwitchTo - Switches to another window on the basis of window title
+		* SwitchToParent - Jumps back to parent window
+		* Evaluate - Evaluates a mathematical expression (Usese Browsers JS Runtime)
+		
+	* Web Element Functions:
+		* Input
+		* Click / Check
+		* Right Click
+		* Clear / Empty
+		* Send - Send special key combinations (Ctrl+C, Enter, etc)
+		* Element Present/Element Displayed
+		* Element Not Present/Element Not Displayed
+		* Element is Checked / is Not checked
+		* Hover
+		* Drag And Drop
+		* Select Box Specific Functions
+			* SelectByText
+			* SelectByValue
+			* SelectByIndex
+		* GetAttribute - Saves the specified attribute of an element to a variable
+		
+	* Run-Time utility functions
+		* Save - Save Text or Value attribute of an element to run-time variable
+		* Match - Match the Text or Value of an element to stored run-time variable
+		* Equal - To check equality of 2 variables
+		* NotEqual - To check inequality of 2 variables
+		* Print - Prints out text, value or string to console
+	
+	* Assertion Functions (Assert)
 		* Element Text / Value Assert - Default
 		* Element Attribute Assert - MiscParams over-ride
 		* Url Assert
@@ -73,9 +82,17 @@ __Version__ : 0.0.9
 * ~~Error focus in screenshot~~
 * ~~Migrate to Maven/Ant project~~ - Replaced with JAR executable
 * Email configuration for report delivery
-* Add 'Evaluate' functionality
+* ~~Add 'Evaluate' functionality~~
 
 ## Change Log ##
+* __14/07/2014__ : 
+	* [New Feature] : Evaluate functionality
+	* [New Feature] : Print functionality
+	* [New Feature] : Window handling
+	* [Enhancement] : Attribute assertions
+	* [Enhancement] : Code refactored
+	* [Bug Fix] : Catch error of empty execution and report hashes
+	* [Bug Fix] : Catch error of AJAX listener for sites not using jQuery for XHR
 * __27/06/2014__ : Refactored selenium file code, added 'Equal','isChecked','isNotChecked', fixed javascript action
 * __25/06/2014__ : Added select box option saving, assert can also use run-time variable data, bug fix in run-time lookup
 * __18/06/2014__ : Error handling for missing parameter, option to skip a test step

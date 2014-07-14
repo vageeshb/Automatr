@@ -141,11 +141,21 @@ public class Main {
 				
 				HashMap reportFormattedData = convertResultToReportFormat(testExecutionResult);
 				
-				Logger.separator();
+				if( !((String[])reportFormattedData.get("summary"))[5].equalsIgnoreCase("0") ) {
 				
-				System.out.println("Execution Completed.\n\nGenerating test result report.");
-				
-				HTMLReporter.generate(reportFormattedData);
+					Logger.separator();
+					
+					System.out.println("Execution Completed.\n\nGenerating test result report.");
+					
+					HTMLReporter.generate(reportFormattedData);
+					
+				} else {
+
+					System.out.println("\nNo Tests were executed, skipping generation of HTML report.");
+					
+					Logger.separator();
+					
+				}
 			}
 		}
 	}
