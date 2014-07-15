@@ -1,4 +1,4 @@
-package exec;
+package com.automatr.executor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,9 +11,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebElement;
 
-import def.Logger;
-import def.Selenium;
-import def.Utils;
+import com.automatr.commons.Logger;
+import com.automatr.commons.Selenium;
+import com.automatr.commons.Utils;
 
 /**
  * Automatr

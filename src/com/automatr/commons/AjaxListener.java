@@ -1,4 +1,4 @@
-package def;
+package com.automatr.commons;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.StaleElementReferenceException;

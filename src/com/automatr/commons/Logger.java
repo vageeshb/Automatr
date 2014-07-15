@@ -1,4 +1,4 @@
-package def;
+package com.automatr.commons;
 
 import java.util.ArrayList;
 import java.util.HashMap;

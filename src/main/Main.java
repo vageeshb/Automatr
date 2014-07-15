@@ -9,11 +9,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import def.Logger;
-import def.Utils;
-import parser.Reader;
-import report.HTMLReporter;
-import exec.Executor;
+import com.automatr.commons.Logger;
+import com.automatr.commons.Utils;
+import com.automatr.executor.Executor;
+import com.automatr.parser.ExcelReader;
+import com.automatr.reporter.HTMLReporter;
+
 import jxl.read.biff.BiffException;
 
 /**
@@ -137,13 +138,13 @@ public class Main {
 			} else {
 				// File exists, run program
 				
-				HashMap<String, Object> readResult = Reader.read(excelFile);
+				HashMap<String, Object> readResult = ExcelReader.read(excelFile);
 				
-				startTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
+				startTime = com.automatr.commons.Utils.now("dd/MM/yyyy HH:mm:ss:S");
 				
 				HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("object_repository"), (HashMap)readResult.get("test_data"));
 				
-				endTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
+				endTime = com.automatr.commons.Utils.now("dd/MM/yyyy HH:mm:ss:S");
 				
 				config = (String[])readResult.get("config");
 				

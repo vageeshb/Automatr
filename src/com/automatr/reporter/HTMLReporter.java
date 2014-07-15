@@ -1,4 +1,4 @@
-package report;
+package com.automatr.reporter;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 
-import def.Logger;
-import def.Utils;
+import com.automatr.commons.Logger;
+import com.automatr.commons.Utils;
 
 /**
  * Selenium Automation Framework

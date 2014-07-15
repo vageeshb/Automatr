@@ -1,12 +1,13 @@
-package parser;
+package com.automatr.parser;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.automatr.commons.*;
+
 import jxl.*;
 import jxl.read.biff.BiffException;
-import def.*;;
 
 /**
  * Automatr
@@ -16,7 +17,7 @@ import def.*;;
  * @author VAGEESH BHASIN
  * @version 0.0.10
  */
-public class Reader {
+public class ExcelReader {
 	
 	private static int testCount = 0;
 	/**
