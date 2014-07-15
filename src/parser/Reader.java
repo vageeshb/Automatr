@@ -94,6 +94,46 @@ public class Reader {
 		
 	}
 	
+	private static HashMap<String, HashMap<String, String[]>> readOR(Workbook workbook) {
+		
+		// Local Variables
+		HashMap<String, HashMap<String, String[]>> objRepoHash = new HashMap<String, HashMap<String, String[]>>();
+		HashMap<String, String[]> elementHash;
+		
+		// Read and define 'Test Data' work sheet
+		Sheet objectRepositorySheet = workbook.getSheet("object_repository");
+		
+		if (objectRepositorySheet != null) {
+			int numberOfRows = objectRepositorySheet.getRows();
+			
+			for (int i = 1; i < numberOfRows; i++) {
+				if( objectRepositorySheet.getCell(0,i).getContents().isEmpty() == false ) {
+					String objRepoName = objectRepositorySheet.getCell(0,i).getContents();
+					
+					if ( objRepoHash.get(objRepoName) == null )
+						objRepoHash.put(objRepoName, new HashMap<String, String[]>());
+
+					elementHash = objRepoHash.get(objRepoName);
+					String elementName = objectRepositorySheet.getCell(1,i).getContents();
+
+					if ( elementHash.get(elementName) == null ) {
+						String[] locatingData = new String[2];
+						locatingData[0] = objectRepositorySheet.getCell(2,i).getContents();
+						locatingData[1] = objectRepositorySheet.getCell(3,i).getContents();
+						
+						elementHash.put(elementName, locatingData);
+					}
+					else {
+						System.out.println("Reading error, multiple elements with same name defined for Repository: " + objRepoName);
+					}
+				}
+				
+			}
+		}
+		
+		return objRepoHash;
+	}
+	
 	/**
 	 * This method reads all the tests from data file and returns a HashMap with Module Name as Key and Tests as Value.
 	 * @param workbook [WorkBook] The workbook from where all the tests will be read.
@@ -187,6 +227,7 @@ public class Reader {
 		HashMap<String, Object> executionHash = new HashMap<String, Object>();
 		HashMap<String, Object> results = new HashMap<String, Object>();
 		HashMap<String, String> testData = new HashMap<String, String>();
+		HashMap<String, HashMap<String, String[]>> objRepoHash = new HashMap<String, HashMap<String, String[]>>();
 		
 		HashMap<String, ArrayList<String>> execManagerHash = new HashMap<String, ArrayList<String>>();
 		
@@ -219,11 +260,17 @@ public class Reader {
 		
 		results.put("test_data", testData);
 		
+		objRepoHash = readOR(workbook);
+		
+		System.out.println("Number of Object Repositories : " + objRepoHash.size());
+		
+		results.put("object_repository", objRepoHash);
+		
 		Logger.separator();
 		
 		// Get entries of tests to be executed
 		
-		for (int j = 3; j < workbook.getNumberOfSheets(); j++) {
+		for (int j = 4; j < workbook.getNumberOfSheets(); j++) {
 			// Read test for a module and put into Execution Hash
 			executionHash.put(workbook.getSheet(j).getName(), readSheet(workbook, j));
 		}

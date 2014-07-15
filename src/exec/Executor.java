@@ -28,6 +28,7 @@ public class Executor {
 	private static String[] config;
 	@SuppressWarnings("rawtypes")
 	private static HashMap allTestsHash;
+	private static HashMap<String, HashMap<String, String[]>> objRepo;
 	private static HashMap<String, String> runTimeHash = new HashMap<String, String>();
 	private static WebDriver driver;
 	private static String parentWindowHandle;
@@ -82,7 +83,7 @@ public class Executor {
 		// Declare variables
 		Object element;
 		String stepName, stepAction, stepDataValue, stepLocatorType, stepLocatorValue;
-		String[] stepArray, actionResult, stepResult, miscParams;
+		String[] stepArray, actionResult, stepResult, miscParams, locators;
 		int stepReduction;
 		
 		// Initialize step array
@@ -109,8 +110,9 @@ public class Executor {
 		// ========================================================================================================================
 			
 			stepName = stepArray[0];
-			stepLocatorType = stepArray[1];
-			stepLocatorValue = stepArray[2];
+			locators = objRepo.get(stepArray[1]).get(stepArray[2]);
+			stepLocatorType = locators[0];
+			stepLocatorValue = locators[1];
 			stepAction = stepArray[3];
 			
 			// TODO: Check of variable lookup conflicts
@@ -572,11 +574,12 @@ public class Executor {
 	 * @param config [String[]] - The configuration settings.
 	 * @param execManagerHash [HashMap] - The execution hash with Module Name as Key and Tests as Values.
 	 * @param testsHash [HashMap] - All the tests present in the data file.
+	 * @param objRepo TODO
 	 * @param testData [HashMap] - The test data to be used.
 	 * @return HashMap with Module Name as Key and Test Case Result HashMap as Values.
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap execManagerHash, HashMap testsHash, HashMap testData) {
+	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap execManagerHash, HashMap testsHash, HashMap objRepo, HashMap testData) {
 		
 		// Run only the tests as defined in execution manager hash
 		Set set = execManagerHash.entrySet();
@@ -586,6 +589,7 @@ public class Executor {
 		setConfig(config);
 		setTestData(testData);
 		setallTestsHash(testsHash);
+		setObjRepo(objRepo);
 		
 		// Perform Execution Module-wise
 		while(i.hasNext()) {
@@ -658,6 +662,14 @@ public class Executor {
 	@SuppressWarnings("rawtypes")
 	private static void setallTestsHash(HashMap allTestsHash) {
 		Executor.allTestsHash = allTestsHash;
+	}
+
+	public static HashMap<String, HashMap<String, String[]>> getObjRepo() {
+		return objRepo;
+	}
+
+	public static void setObjRepo(HashMap<String, HashMap<String, String[]>> objRepo) {
+		Executor.objRepo = objRepo;
 	}
 
 }

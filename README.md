@@ -111,7 +111,7 @@ __Version__ : 0.0.10
 * Adding advanced selenium functions - In-Progress
 * Better Errors
 * Email configuration for report delivery
-* Upgrade to Object repository
+* ~~Upgrade to Object repository~~
 * ~~Basic selenium functions~~
 * ~~Reporting~~
 * ~~Using results from execution module in reporting module~~
@@ -124,6 +124,9 @@ __Version__ : 0.0.10
 ***
 
 ## Change Log ##
+* __15/07/2014__ : __BREAKING CHANGES__
+	* [New Feature] : All the elements will now be looked up from Object Repository sheet
+	* [Enhancement] : Documenting methods
 * __14/07/2014__ : 
 	* [New Feature] : Evaluate functionality
 	* [New Feature] : Print functionality

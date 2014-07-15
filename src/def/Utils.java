@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  */
 public class Utils {
 		
-			/**
+	/**
 	 * This method flattens an arraylist
 	 * @param input [ArrayList] - The input arraylist to be flattened
 	 * @return

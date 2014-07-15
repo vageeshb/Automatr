@@ -141,7 +141,7 @@ public class Main {
 				
 				startTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
 				
-				HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("test_data"));
+				HashMap<String, HashMap<String, ArrayList<String[]>>> testExecutionResult = Executor.performExecution((String[])readResult.get("config"), (HashMap)readResult.get("exec_manager"), (HashMap)readResult.get("tests"), (HashMap)readResult.get("object_repository"), (HashMap)readResult.get("test_data"));
 				
 				endTime = def.Utils.now("dd/MM/yyyy HH:mm:ss:S");
 				
