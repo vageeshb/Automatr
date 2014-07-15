@@ -7,13 +7,20 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.events.WebDriverEventListener;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-public class AjaxActivityIndicatorEventListener implements WebDriverEventListener {
+/**
+ * Automatr
+ * def.AjaxListener.java
+ * Purpose: Contains methods to listen to AJAX activity
+ * 
+ * @author VAGEESH BHASIN
+ * @version 0.0.10
+ */
+public class AjaxListener implements WebDriverEventListener {
 	
 	@Override
 	public void afterClickOn(WebElement element, WebDriver driver) {
 		try {
-			// Waiting for AJAX indicator to disappear...
+			// TODO: Make this dynamic
 			new WebDriverWait(driver, 10).until(ExpectedConditions.invisibilityOfElementLocated(By.id("imgLoadRight")));
 		} catch (StaleElementReferenceException e) {
 			// Clicking element must have not called AJAX request. Skipping.

@@ -1,7 +1,6 @@
 package def;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -21,19 +20,17 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * def.Selenium.java
  * Purpose: Contains Selenium related methods
  *
- * @version 0.0.1
+ * @version 0.0.10
  * @author VAGEESH BHASIN
  */
 
 public class Selenium {
 	
-	
 	/**
 	 * This method is a listener for AJAX calls - Specifically jQuery calls, it passes after first ajax call completes
-	 * @param driver
-	 * @throws InterruptedException
+	 * @param driver [WebDriver]
 	 */
-	public static void WaitForAjax(WebDriver driver) throws InterruptedException
+	public static void WaitForAjax(WebDriver driver)
 	{
 		Boolean isJqueryUsed = (Boolean)(((JavascriptExecutor)driver).executeScript("return (typeof(jQuery) != 'undefined')"));
 		if(isJqueryUsed) {
@@ -43,7 +40,9 @@ public class Selenium {
     			Boolean ajaxIsComplete = (Boolean)(((JavascriptExecutor)driver).executeScript("return jQuery.active == 0"));
 	        	if (ajaxIsComplete)
 	        		break;
-	        	Thread.sleep(100);
+	        	try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {}
     		}
 		}
 		else {
@@ -54,7 +53,7 @@ public class Selenium {
 	
 	/**
 	 * This method is used to return a remote web driver with capabilities according to the passed driver type.
-	 * @param driverType
+	 * @param driverType [String] Type of driver instance to be created
 	 * @return WebDriver
 	 */
 	public static WebDriver getDriver(String driverType) {
@@ -76,15 +75,15 @@ public class Selenium {
 	
 	/**
 	 * This method is used to initialize driver and open the web page given by the parameter 'url'.
-	 * @param url - Specifies the web page to open
-	 * @param driverType - Specifies the web driver type (Firefox, Chrome, Internet Explorer)
+	 * @param url [Stirng] - Specifies the web page to open
+	 * @param driverType [String] - Specifies the web driver type (Firefox, Chrome, Internet Explorer)
 	 * @return WebDriver
 	 */
 	public static WebDriver initDriver(String url, String driverType) {
 		WebDriver driver = getDriver(driverType);
 		
 		// Add Ajax Activity listener instance to check for Ajax requests
-		new EventFiringWebDriver(driver).register(new AjaxActivityIndicatorEventListener()); 
+		new EventFiringWebDriver(driver).register(new AjaxListener()); 
 		
 		// Maximaize the window
 		driver.manage().window().maximize();
@@ -99,9 +98,9 @@ public class Selenium {
 	
 	/**
 	 * This method is used to locate a web element on the web page.
-	 * @param driver Selenium web driver to locate element
-	 * @param locatorType Specifies the method to be used to locate a web element
-	 * @param locatorValue Specifies the value for the location method to use
+	 * @param driver [WebDriver] - Selenium web driver to locate element
+	 * @param locatorType [String] - Specifies the method to be used to locate a web element
+	 * @param locatorValue [String] - Specifies the value for the location method to use
 	 * @return WebElement
 	 */
 	public static Object find(WebDriver driver, String locatorType, String locatorValue, String opts) {
@@ -140,9 +139,9 @@ public class Selenium {
 	
 	/**
 	 * This method is used to locate a web elements on the web page.
-	 * @param driver Selenium web driver to locate element
-	 * @param locatorType Specifies the method to be used to locate a web element
-	 * @param locatorValue Specifies the value for the location method to use
+	 * @param driver [WebDriver] - Selenium web driver to locate element
+	 * @param locatorType [String] - Specifies the method to be used to locate a web element
+	 * @param locatorValue [String] - Specifies the value for the location method to use
 	 * @return WebElement
 	 */
 	public static List<WebElement> findElements(WebDriver driver, String locatorType, String locatorValue) {
@@ -180,19 +179,19 @@ public class Selenium {
 	}
 	
 	/**
-	 * This method waits for the element to be invisible
-	 * @param driver
-	 * @param locatorType
-	 * @param locatorValue
+	 * This method waits for the element to be invisible or disappear from the page
+	 * @param driver [WebDriver] - The selenium driver to locate element
+	 * @param locatorType [String] - Type of locator to be used
+	 * @param locatorValue [String] - Value of locating method to be used
 	 * @return
 	 */
 	public static String[] isNotDisplayed(WebDriver driver, String locatorType, String locatorValue) {
 		
 		// Define webdriver wait, waits for max 10 seconds to find an element
 		WebDriverWait wait = new WebDriverWait(driver,10);
+		String[] result = {".", null};
 		
 		try {
-			String[] result = {".", null}; 
 			switch (locatorType.toLowerCase()) {
 				case "id":
 					wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id(locatorValue)));
@@ -230,6 +229,14 @@ public class Selenium {
 		}
 	}
 	
+	/**
+	 * This method performs miscellaneous general utility actions
+	 * @param driver [WebDriver] - The selenium driver to be used
+	 * @param actionName [String] - The Action to be performed
+	 * @param actionValue [String] - The data value to be used by the action
+	 * @param miscParams [String[5]] - Miscellaneous parameters to be used by the action
+	 * @return
+	 */
 	public static String[] miscActions(WebDriver driver, String actionName, String actionValue, String[] miscParams) {
 		
 		// Assume every action is successful
@@ -243,32 +250,33 @@ public class Selenium {
 			// Wait for action element to be stable - Mimicking user action latency
 			Thread.sleep(500);
 			
-			// Perform action
 			switch(actionName.toLowerCase()) {
 				
-				// Alert handler
+			// ===========================================================================================
+			// ACTION DEFINITIONS
+			// ===========================================================================================
+				// Accept Alert
 				case "acceptalert":
 					Alert alert = driver.switchTo().alert();
 					alert.accept();
 			        break;
 			    
-			    // Action - Execute a JavaScript snippet
+			    // Execute a JavaScript
 				case "javascript":
-					// Execute JS if driver can run JS
 					if (driver instanceof JavascriptExecutor) {
 					    ((JavascriptExecutor)driver).executeScript(actionValue);
 					}
-					// Driver cant run JS, fail the step
 					else {
 						result = new String[]{"F", "The driver cannot handle JavaScript execution."};
 					}
 					break;
 				
-				// Evaluation
+				// Evaluate an expression
 				case "evaluate":
-					// Execute JS if driver can run JS
 					if (driver instanceof JavascriptExecutor) {
 					    Object t = ((JavascriptExecutor)driver).executeScript("return eval(\"" + miscParams[0] + "\");");
+					    
+					    // Type cast the result back to String
 					    if( t instanceof Long) {
 					    	result[1] = Long.toString((Long)t);
 					    } 
@@ -282,16 +290,16 @@ public class Selenium {
 					    	result[1] = (String)t;
 					    }
 					}
-					// Driver cant run JS, fail the step
 					else {
 						result = new String[]{"F", "The driver cannot handle JavaScript execution."};
 					}
 					break;
+				
+				// Switch to another window
 				case "switchto":
 					Set<String> windows = driver.getWindowHandles();
 		            for (String w : windows) {
 		                driver.switchTo().window(w);
-		                //System.out.println(w + ":" + driver.getTitle());
 		                int counter = 0;
 		                while( counter < 20 ) {
 		                	counter++;
@@ -303,21 +311,35 @@ public class Selenium {
 		                result = new String[]{"F", "Could not locate window name - &#39;" + actionValue + "&#39;."};
 		            }
 					break;
+					
+				// Undefined action
 				default:
 					result = new String[]{"F", "Unknown action &#39;" + actionName + "&#39;."};
+
+			// ===========================================================================================
+			// END OF ACTION DEFINITIONS
+			// ===========================================================================================
+					
 			}
 		}
 		catch (Exception e) {
-			System.out.println(e.getMessage());
 			if(actionName.equalsIgnoreCase("evaluate"))
 				result = new String[]{"F", e.getMessage().split("[(]")[0]};
 			else
 				result = new String[]{"F", "Unexpected error for action - &#39;" + actionName + "&#39;."};
 		}
-		
 		return result;
 	}
 	
+	/**
+	 * This method performs string related actions
+	 * @param driver [WebDriver] - The selenium driver to be used
+	 * @param actual [String] - The actual value to be expected
+	 * @param actionName [String] - The Action to be performed
+	 * @param actionValue [String] - The data value to be used by the action
+	 * @param miscParams [String[5]] - Miscellaneous parameters to be used by the action
+	 * @return
+	 */
 	public static String[] stringActions(WebDriver driver, String actual, String actionName, String actionValue, String[] miscParams) {
 						
 		// Assume every action is successful
@@ -330,11 +352,13 @@ public class Selenium {
 				
 			// Wait for action element to be stable - Mimicking user action latency
 			Thread.sleep(500);
-				
-			// Perform Action
+			
 			switch (actionName.toLowerCase()) {
-					
-				// Verification - Verify if the url matches the passed value
+			
+			// ===========================================================================================
+			// ACTION DEFINITIONS
+			// ===========================================================================================	
+				// URL Verification
 				case "assert":
 					if(!actual.equalsIgnoreCase(actionValue)) {
 						int counter = 0;
@@ -352,10 +376,13 @@ public class Selenium {
 						}
 					}
 					break;
-					
+				// Unknown action
 				default:
 					result = new String[]{"F", "Unknown action &#39;" + actionName + "&#39;."};
 				}
+			// ===========================================================================================
+			// END OF ACTION DEFINITIONS
+			// ===========================================================================================
 		}
 		catch(Exception e) {
 			result = new String[]{"F", "Unexpected error for action - &#39;" + actionName + "&#39;."};
@@ -363,12 +390,13 @@ public class Selenium {
 		
 		return result;
 	}
+	
 	/**
-	 * This method performs a selenium action on the web element.
-	 * @param driver The web driver to attach the action to
-	 * @param webElement The web element on which an action is to be performed
-	 * @param actionName The type of action to be performed
-	 * @param actionValue The value to be used with performing an action
+	 * This method performs a web element action on the web element.
+	 * @param driver [WebDriver] - The web driver to attach the action to
+	 * @param webElement [WebElement] - The web element on which an action is to be performed
+	 * @param actionName [String] - The type of action to be performed
+	 * @param actionValue [String] - The value to be used with performing an action
 	 * @return status, message(Default = null)
 	 */
 	public static String[] elementActions(WebDriver driver, WebElement webElement, String actionName, String actionValue, String[] miscParams) {
@@ -376,6 +404,7 @@ public class Selenium {
 		// Assume every step is successful
 		String[] result = new String[] {".", null};
 		
+		// Variable declarations
 		WebDriverWait actionWait = new WebDriverWait(driver, 10);
 		Actions action;
 		Select selectBox;
@@ -389,14 +418,15 @@ public class Selenium {
 			// Wait for action element to be stable - Mimicking user action latency
 			Thread.sleep(500);
 			
-			// Perform Action
+			// ===========================================================================================
+			// ACTION DEFINITIONS
+			// ===========================================================================================
 			switch (actionName.toLowerCase()) {
 			
-				// 	Action - Perform Input to element
 				case "input":
 					webElement.sendKeys(actionValue);
 					break;
-					
+				
 				case "send":
 					// Check if special keys were sent
 					if( miscParams != null && miscParams[0] != null ) {
@@ -428,27 +458,20 @@ public class Selenium {
 						}
 					}
 					break;
-				// Action - Perform Hover over element
+					
 				case "hover":
 					action = new Actions(driver);
 					action.moveToElement(webElement).perform();
 					Thread.sleep(500);
 					break;
 					
-				// Action - Perform Click on Element
 				case "click":
 					try {
-						// Check if element was on screen
-						/*if (thisElement.getSize() != null) {
-							thisElement.click();
-						}*/
 						if(webElement.isDisplayed()) {
 							webElement.click();
 						}
-						// Element was not displayed on screen
 						else {
 							((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView(true);", webElement);
-							// Wait for element to be stable
 							Thread.sleep(1000);
 							webElement.click();
 						}
@@ -463,14 +486,12 @@ public class Selenium {
 					}
 					break;
 				
-				// Action - Perform Right Click
 				case "rightclick":
 					action = new Actions(driver);
 					action.moveToElement(webElement);
 					action.contextClick(webElement).build().perform();;
 					break;
 					
-				// Action - Perform Drag and Drop
 				case "draganddrop":
 					WebElement onElement = webElement;
 					WebElement toElement = driver.findElement(By.xpath(actionValue));
@@ -483,30 +504,25 @@ public class Selenium {
 					action.perform();
 					break;
 					
-				// Action - Perform Clear on element
 				case "clear":
 					webElement.clear();
 					break;
 					
-				// Action - Perform Select by Text on Select Box
 				case "selectbytext":
 					selectBox = new Select(webElement);
 					selectBox.selectByVisibleText(actionValue);
 					break;
 				
-				// Action - Perform Select by Index on Select Box
 				case "selectbyindex":
 					selectBox = new Select(webElement);
 					selectBox.selectByIndex(Integer.parseInt(actionValue));
 					break;
 
-				// Action - Perform Select by Value on Select Box
 				case "selectbyvalue":
 					selectBox = new Select(webElement);
 					selectBox.selectByValue(actionValue);
 					break;
 					
-				// Action - Save the value of the element
 				case "save":
 					if(webElement.getText() != null && !webElement.getText().isEmpty()) { 
 						result[1] = webElement.getText();
@@ -519,33 +535,28 @@ public class Selenium {
 					}
 					break;
 					
-				// Action - Save first selected option
 				case "saveselected":
 					result[1] = (new Select (webElement)).getFirstSelectedOption().getText();
 					break;
 
-				// Verification - Verify if element is element
 				case "isempty":
 					if(!webElement.getText().isEmpty()) {
 						result = new String[]{"F", "Expected the element to be empty, instead found - " + webElement.getText() + "."};
 					}
 					break;
 				
-				// Verification - Verify if checkbox was checked
 				case "ischecked":
 					if(!webElement.isSelected()) {
 						result = new String[]{"F", "Element was not checked!"};
 					}
 					break;
 				
-				// Verification - Verify if checkbox was not checked
 				case "isnotchecked":
 					if(webElement.isSelected()) {
 						result = new String[]{"F", "Element was checked!"};
 					}
 					break;
 					
-				// Verification - Verify if element is present or is displayed
 				case "ispresent":
 				case "isdisplayed":
 					
@@ -559,7 +570,6 @@ public class Selenium {
 					}
 					break;
 					
-				// Verification - Verify if element has the same value as passed
 				case "match":
 				case "assert":
 					expected = actionValue;
@@ -581,7 +591,6 @@ public class Selenium {
 					}
 					break;
 					
-				// ASSERT FALSE
 				case "assertfalse":
 					expected = actionValue;
 					if(miscParams == null) {
@@ -602,15 +611,19 @@ public class Selenium {
 					}
 					break;
 				
-				// Attribute related
 				case "getattribute":
 					result = new String[]{".", webElement.getAttribute(miscParams[0])};
 					break;
 					
-				// Default
+				// Undefined action
 				default:
 					result = new String[]{"F", "Unknown action &#39;" + actionName + "&#39;."};
 					break;
+					
+			// ===========================================================================================
+			// END OF ACTION DEFINITIONS
+			// ===========================================================================================
+					
 			}
 		}
 		catch(Exception e) {
@@ -620,6 +633,13 @@ public class Selenium {
 		return result;
 	}
 	
+	/**
+	 * Helper method to perform assertion
+	 * @param expected [String] - The value to be expected
+	 * @param actual [String] - The actual value found
+	 * @param flag [Boolean] - Flag to reverse assertion
+	 * @return
+	 */
 	private static String[] localAssert(String expected, String actual, Boolean flag) {
 		if( expected == null || actual == null || expected.equals("") || actual.equals("")) {
 			return new String[]{"F", "One of the assertion values is null, please re-check the step inputs."};
@@ -640,12 +660,11 @@ public class Selenium {
 			}
 		}
 	}
+	
 	/**
 	 * This method take a screenshot and saves it in a temporary folder (/temp)
 	 * @param driver WebDriver to take screenshot with
 	 * @param filename Name of the file to be saved as
-	 * @throws IOException
-	 * @throws InterruptedException 
 	 */
 	public static void screenshot(WebDriver driver, String filename, WebElement element, String type) {
 		

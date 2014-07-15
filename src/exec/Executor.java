@@ -1,6 +1,5 @@
 package exec;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,12 +16,12 @@ import def.Selenium;
 import def.Utils;
 
 /**
- * Selenium Automation Framework
+ * Automatr
  * executor.Execute.java
  * Purpose: Contains methods to perform test execution.
  * 
  * @author VAGEESH BHASIN
- * @version 0.0.1
+ * @version 0.0.10
  */
 public class Executor {
 	private static HashMap<String, String> testData;
@@ -36,7 +35,6 @@ public class Executor {
 	private static String currentTest;
 	private static HashMap<String, ArrayList<String[]>> testStatuses;
 	private static HashMap<String, HashMap<String, ArrayList<String[]>>> status = new HashMap<String, HashMap<String, ArrayList<String[]>>>();
-	
 	
 	/**
 	 * This method finds a web element and dispatches a call for action on this element
@@ -75,13 +73,11 @@ public class Executor {
 	}
 	
 	/**
-	 * This method executes a test step either by finding an element and performing action or by assertion.
-	 * @param testStep Should contain [Step Name, Locator Type, Locator Value, Action, Data Value]
-	 * @throws IOException 
-	 * @throws InterruptedException 
+	 * This method executes a test step by using data values.
+	 * @param testStep [ArrayList String ] - Should contain [Step Name, Locator Type, Locator Value, Action, Data Value]
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static String[] executeTestStep(Object testStep) throws IOException, InterruptedException {
+	private static String[] executeTestStep(Object testStep) {
 		
 		// Declare variables
 		Object element;
@@ -205,7 +201,13 @@ public class Executor {
 				
 			// Wait
 			case "wait":
+			try {
 				Thread.sleep(Integer.parseInt(stepDataValue) * 100);
+			} catch (NumberFormatException e) {
+				actionResult = new String[] {"F", "Test Step Data Value is not a number."};
+			} catch (InterruptedException e) {
+				actionResult = new String[] {"F", "Unexpected error. 'Thread.sleep' failed! Please log an issue at http://vageeshb.github.io/Automatr/"};
+			}
 				break;
 			
 			// Print
@@ -417,7 +419,12 @@ public class Executor {
 						break;
 					}
 					
-					Thread.sleep(200);
+					try {
+						Thread.sleep(200);
+					} catch (InterruptedException e) {
+						actionResult = new String[] {"F", "Unexpected error. 'Thread.sleep' failed! Please log an issue at http://vageeshb.github.io/Automatr/"};
+					}
+					
 					localCounter++;
 					
 					if(localCounter == 50) {
@@ -483,20 +490,17 @@ public class Executor {
 		}
 		
 		
-		// STEP RESULT
-		// PASS
+		// ========================================================================================================================
+		// STEP RESULTS EXTRACTION
+		// ========================================================================================================================
 		if (actionResult[0].equalsIgnoreCase(".")) {
-			
-			// Write to Console
 			System.out.print(".");
 			stepResult[1] = "PASS";
 		} 
-		// FAIL / WARNING
 		else {
 			
-			// Write to console
 			System.out.print(actionResult[0].toUpperCase());
-			//System.out.println(actionResult[1]);
+			
 			// Assign step status
 			if(actionResult[0].equalsIgnoreCase("f"))
 				stepResult[1] = "FAIL: " + actionResult[1];
@@ -512,7 +516,11 @@ public class Executor {
 			else
 				Selenium.screenshot(driver, tempFileName, null, null);
 		}
+		// ========================================================================================================================
+		// END OF STEP RESULTS EXTRACTION
+		// ========================================================================================================================
 		
+		// Record end time of step execution
 		stepResult[3] = Utils.now("dd/MM/yyyy HH:mm:ss:SS");
 		
 		return stepResult;
@@ -520,14 +528,12 @@ public class Executor {
 	
 	/**
 	 * This method takes in a hash of tests and passes each test step to method 'executeTestStep'
-	 * @param moduleName The name of the current module
-	 * @param test HashMap with Test Name as Key and Test Steps as Value.
-	 * @throws IOException 
-	 * @throws InterruptedException 
-	 * @returns HashMap with Test Name as Key and Test Step Status Array as Values.
+	 * @param moduleName [String] - The name of the current module
+	 * @param test [HashMap] - A hash containing Test Name as Key and Test Steps as Value.
+	 * @returns ]HashMap] - Test Name as Key and Test Step Status Array as Values.
 	 */
 	@SuppressWarnings("rawtypes")
-	private static HashMap<String, ArrayList<String[]>> executeTest(String testName, ArrayList test, boolean openDriver) throws IOException, InterruptedException {
+	private static HashMap<String, ArrayList<String[]>> executeTest(String testName, ArrayList test, boolean openDriver) {
 		
 		// Set Current Test
 		currentTest = testName;
@@ -563,16 +569,14 @@ public class Executor {
 	
 	/**
 	 * This method performs the whole execution of tests using the config, exection hash, test data and default steps.
-	 * @param config The configuration settings.
-	 * @param testsHash The execution hash with Module Name as Key and Tests as Values.
-	 * @param testData The test data to be used.
-	 * @param defaultSteps The default steps to be executed before each test.
+	 * @param config [String[]] - The configuration settings.
+	 * @param execManagerHash [HashMap] - The execution hash with Module Name as Key and Tests as Values.
+	 * @param testsHash [HashMap] - All the tests present in the data file.
+	 * @param testData [HashMap] - The test data to be used.
 	 * @return HashMap with Module Name as Key and Test Case Result HashMap as Values.
-	 * @throws IOException 
-	 * @throws InterruptedException 
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap execManagerHash, HashMap testsHash, HashMap testData) throws IOException, InterruptedException {
+	public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap execManagerHash, HashMap testsHash, HashMap testData) {
 		
 		// Run only the tests as defined in execution manager hash
 		Set set = execManagerHash.entrySet();

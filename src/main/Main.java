@@ -16,6 +16,14 @@ import report.HTMLReporter;
 import exec.Executor;
 import jxl.read.biff.BiffException;
 
+/**
+ * Automatr
+ * main.Main.java
+ * Purpose: Contains main function
+ * 
+ * @author VAGEESH BHASIN
+ * @version 0.0.10
+ */
 public class Main {
 	
 	private static String[] config;

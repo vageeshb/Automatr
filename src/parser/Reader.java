@@ -9,13 +9,13 @@ import jxl.read.biff.BiffException;
 import def.*;;
 
 /**
- * Selenium Automation Framework
- * @filename parser.Reader.java
- * @purpose Contains methods to read and extract data from data file.
+ * Automatr
+ * parser.Reader.java
+ * Purpose: Contains methods to read data file
+ * 
  * @author VAGEESH BHASIN
- * @version 0.0.1
+ * @version 0.0.10
  */
-
 public class Reader {
 	
 	private static int testCount = 0;
