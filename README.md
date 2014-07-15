@@ -1,7 +1,7 @@
-JAVA Selenium Automation Framework
-=================================
+# Automatr #
 
 An automation framework for performing automation testing of Web Applications using Selenium.
+
 __Version__ : 0.0.10
 
 ## How to Use ##
