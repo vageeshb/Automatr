@@ -1,4 +1,4 @@
-package com.automatr.commons;
+package main.java.com.automatr.commons;
 
 import java.io.File;
 import java.text.DateFormat;
@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
 /**
  * Automatr
  * def.Utils.java

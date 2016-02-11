@@ -1,19 +1,13 @@
-package com.automatr.executor;
+package main.java.com.automatr.executor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import main.java.com.automatr.commons.Selenium;
+import main.java.com.automatr.commons.Utils;
+import org.apache.log4j.Logger;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebElement;
 
-import com.automatr.commons.Logger;
-import com.automatr.commons.Selenium;
-import com.automatr.commons.Utils;
+import java.util.*;
 
 /**
  * Automatr
@@ -24,6 +18,8 @@ import com.automatr.commons.Utils;
  * @version 0.0.10
  */
 public class Executor {
+    private static Logger logger = Logger.getLogger(Executor.class);
+
 	private static HashMap<String, String> testData;
 	private static String[] config;
 	@SuppressWarnings("rawtypes")
@@ -466,6 +462,10 @@ public class Executor {
 			// Link/Button related
 				case "click":
 				case "rightclick":
+			// Mouse events
+				case "mousedown":
+				case "mousemove":
+				case "mouseup":
 			// Multi-element
 				case "draganddrop":
 			// Input box related
@@ -530,7 +530,7 @@ public class Executor {
 	
 	/**
 	 * This method takes in a hash of tests and passes each test step to method 'executeTestStep'
-	 * @param moduleName [String] - The name of the current module
+	 * @param testName [String] - The name of the current module
 	 * @param test [HashMap] - A hash containing Test Name as Key and Test Steps as Value.
 	 * @returns ]HashMap] - Test Name as Key and Test Step Status Array as Values.
 	 */
@@ -597,13 +597,11 @@ public class Executor {
 
 			Map.Entry me = (Map.Entry)i.next();
 			
-			Logger.separator();
-
 			// Extract module name and tests to be run
 			String moduleName = me.getKey().toString();
 			ArrayList<String> tests = (ArrayList<String>)me.getValue();
 			
-			System.out.println("Executing Module: " + moduleName);
+			logger.info(String.format("Executing Module: %s", moduleName));
 			
 			currentModule = moduleName;
 			
@@ -612,7 +610,8 @@ public class Executor {
 			
 			for (String test : tests) {
 				
-				System.out.print("\n" + test + ": ");
+				logger.info(String.format("Test case '%s' started", test));
+
 				// Initialize before execution
 				if(status.get(moduleName) == null) {
 					HashMap<String, ArrayList<String[]>> tempTestHash = new HashMap<String, ArrayList<String[]>>();
@@ -622,17 +621,19 @@ public class Executor {
 				
 				// Get test steps of this test
 				ArrayList testSteps = (ArrayList)((HashMap)testsHash.get(moduleName)).get(test);
-				if(testSteps != null && testSteps.size() > 0)
-					executeTest(test, testSteps, true);
-				else
-					System.out.println("No test steps found for this test case. Please re-check!! Skipping ahead.");
+				if(testSteps != null && testSteps.size() > 0) {
+                    executeTest(test, testSteps, true);
+                } else {
+                    logger.warn("No test steps found for this test case. Please re-check!! Skipping ahead.");
+                }
+
+                System.out.println();
+                logger.info(String.format("Test case '%s' finished", test));
 				
 			}
 			
 			status.put(moduleName, testStatuses);
-			
-			Logger.separator();
-			
+
 		}
 		
 		return status;

@@ -1,4 +1,8 @@
-package com.automatr.reporter;
+package main.java.com.automatr.reporter;
+
+import main.java.com.automatr.commons.Utils;
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,20 +10,8 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.io.FileUtils;
-
-import com.automatr.commons.Logger;
-import com.automatr.commons.Utils;
 
 /**
  * Selenium Automation Framework
@@ -30,6 +22,9 @@ import com.automatr.commons.Utils;
  * @version 0.0.1
  */
 public class HTMLReporter {
+
+	private static Logger logger = Logger.getLogger(HTMLReporter.class);
+
 	// Class Variables
 	private static String reportContent = "";
 	private static String filename = "";
@@ -394,8 +389,8 @@ public class HTMLReporter {
 	 */
 	private static void createReportResources(String dirName) throws IOException {
 		String currentDir = System.getProperty("user.dir");
-		
-		File srcDir = new File(currentDir + "/resources/report");
+
+		File srcDir = new File(currentDir + "/src/main/resources/report");
 		File trgDir = new File(dirName + "/resources");
 
 		FileUtils.copyDirectory(srcDir, trgDir);
@@ -450,9 +445,7 @@ public class HTMLReporter {
 		fillReport(testExecutionResult);
 		createReport();
 		
-		Logger.separator();
-		System.out.println("Report Generated : " + filename + "/report.html");
-		Logger.separator();
+		logger.info(String.format("Report Generated : %s/report.html", filename));
 	}
 	
 	// Getter and Setter functions

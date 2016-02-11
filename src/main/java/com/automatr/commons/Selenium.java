@@ -1,11 +1,7 @@
-package com.automatr.commons;
-
-import java.io.File;
-import java.util.List;
-import java.util.Set;
+package main.java.com.automatr.commons;
 
 import org.apache.commons.io.FileUtils;
-import org.openqa.selenium.*; 
+import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -14,6 +10,10 @@ import org.openqa.selenium.support.events.EventFiringWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.io.File;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Selenium Automation Framework
@@ -489,7 +489,25 @@ public class Selenium {
 				case "rightclick":
 					action = new Actions(driver);
 					action.moveToElement(webElement);
-					action.contextClick(webElement).build().perform();;
+					action.contextClick(webElement).build().perform();
+					break;
+
+				case "mousedown":
+					action = new Actions(driver);
+					action.moveToElement(webElement);
+					action.clickAndHold().build().perform();
+					break;
+
+				case "mousemove":
+					int xOffset = Integer.parseInt(miscParams[0]);
+					int yOffset = Integer.parseInt(miscParams[1]);
+					action = new Actions(driver);
+					action.moveByOffset(xOffset, yOffset).build().perform();
+					break;
+
+				case "mouseup":
+					action = new Actions(driver);
+					action.release().build().perform();
 					break;
 					
 				case "draganddrop":

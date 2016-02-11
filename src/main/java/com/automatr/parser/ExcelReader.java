@@ -1,13 +1,14 @@
-package com.automatr.parser;
+package main.java.com.automatr.parser;
+
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.read.biff.BiffException;
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import com.automatr.commons.*;
-
-import jxl.*;
-import jxl.read.biff.BiffException;
 
 /**
  * Automatr
@@ -18,6 +19,8 @@ import jxl.read.biff.BiffException;
  * @version 0.0.10
  */
 public class ExcelReader {
+	
+	private static Logger logger = Logger.getLogger(ExcelReader.class);
 	
 	private static int testCount = 0;
 	/**
@@ -125,7 +128,7 @@ public class ExcelReader {
 						elementHash.put(elementName, locatingData);
 					}
 					else {
-						System.out.println("Reading error, multiple elements with same name defined for Repository: " + objRepoName);
+						logger.error(String.format("Multiple elements with same name defined for Object repository: %s", objRepoName));
 					}
 				}
 				
@@ -215,7 +218,7 @@ public class ExcelReader {
 	
 	/**
 	 * This method reads the data files and extracts the configuration settings, the execution manager settings, the test cases and the test data.
-	 * @param filename The data file name from where the settings will be extracted.
+	 * @param excelFile The data file name from where the settings will be extracted.
 	 * @return HashMap(Setting Name, Setting Data) - Refer individual result type for details.
 	 * @setting_name config, default_steps, test_data, tests 
 	 * @setting_data Config data, Default Steps Data, Test Data, Tests (Test Steps)
@@ -232,18 +235,14 @@ public class ExcelReader {
 		
 		HashMap<String, ArrayList<String>> execManagerHash = new HashMap<String, ArrayList<String>>();
 		
-		Logger.separator();
-		
 		Workbook workbook = Workbook.getWorkbook(excelFile);
 		
-		System.out.println("Parsing data file             : " + excelFile.getName());
-		
-		Logger.separator();
+		logger.info(String.format("Parsing data file             : %s", excelFile.getName()));
 		
 		String[] configs = readConfigSheet(workbook);
 		
-		System.out.println("URL                           : " + configs[0]);
-		System.out.println("Driver Type                   : " + configs[1].toUpperCase());
+		logger.info(String.format("URL                           : %s", configs[0]));
+		logger.info(String.format("Driver Type                   : %s", configs[1].toUpperCase()));
 		
 		results.put("config", configs);
 		
@@ -251,23 +250,21 @@ public class ExcelReader {
 		
 		results.put("exec_manager", execManagerHash);
 		
-		System.out.println("Total modules found           : " + execManagerHash.size());
+		logger.info(String.format("Total modules found           : %s", execManagerHash.size()));
 		
-		System.out.println("Total test cases to execute   : " + testCount);
+		logger.info(String.format("Total test cases to execute   : %s", testCount));
 		
 		testData = readTestDataSheet(workbook);
 		
-		System.out.println("Number of test data           : " + testData.size());
+		logger.info(String.format("Number of test data           : %s", testData.size()));
 		
 		results.put("test_data", testData);
 		
 		objRepoHash = readOR(workbook);
 		
-		System.out.println("Number of Object Repositories : " + objRepoHash.size());
+		logger.info(String.format("Number of Object Repositories : %s", objRepoHash.size()));
 		
 		results.put("object_repository", objRepoHash);
-		
-		Logger.separator();
 		
 		// Get entries of tests to be executed
 		
