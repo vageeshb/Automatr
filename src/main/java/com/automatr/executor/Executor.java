@@ -233,11 +233,20 @@ public class Executor {
                     if (stepLocatorType.equalsIgnoreCase("url"))
                         actionResult = Selenium.stringActions(drivers[0], stepLocatorType, stepAction, stepDataValue, miscParams);
                     else {
-
                         actionResult = handleWebElementAction(stepLocatorType, stepLocatorValue, stepDataValue, stepAction, miscParams);
                     }
                 }
                 break;
+
+            case "hasattribute":
+            case "hasnoattribute":
+                if (stepLocatorType == "")
+                    actionResult = new String[]{"F", "Unable to locate element without locator type. Please recheck your step."};
+                else {
+                    actionResult = handleWebElementAction(stepLocatorType, stepLocatorValue, stepDataValue, stepAction, miscParams);
+                }
+                break;
+
 
             // Equality
             case "equal":
