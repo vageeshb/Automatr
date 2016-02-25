@@ -319,12 +319,20 @@ public class Executor {
                 break;
             // Open Driver and get URL
             case "open/get":
-                drivers[0] = Selenium.initDriver(stepDataValue, config[1]);
+                try {
+                    drivers[0] = Selenium.initDriver(stepDataValue, config[1]);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
                 break;
 
             // Open Driver
             case "open":
-                drivers[0] = Selenium.initDriver(null, config[1]);
+                try {
+                    drivers[0] = Selenium.initDriver(null, config[1]);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
                 break;
 
             // Get URL
@@ -538,7 +546,8 @@ public class Executor {
      * @returns ]HashMap] - Test Name as Key and Test Step Status Array as Values.
      */
     @SuppressWarnings("rawtypes")
-    private static HashMap<String, ArrayList<String[]>> executeTest(String testName, ArrayList test, boolean openDriver) {
+    private static HashMap<String, ArrayList<String[]>> executeTest(String testName, ArrayList test, boolean openDriver)
+        throws Exception {
 
         // Set Current Test
         currentTest = testName;
@@ -546,7 +555,11 @@ public class Executor {
         // Initialize drivers[0] and run-time hash if called from module run
         if (openDriver == true) {
             runTimeHash = new HashMap<String, String>();
-            drivers[0] = Selenium.initDriver(config[0], config[1]);
+            try {
+                drivers[0] = Selenium.initDriver(config[0], config[1]);
+            } catch (Exception e) {
+                throw new Exception(String.format("Could not execute test '%s'. Reason: %s", testName, e.getMessage()));
+            }
             parentWindowHandle = drivers[0].getWindowHandle();
         }
 
@@ -629,7 +642,11 @@ public class Executor {
                 // Get test steps of this test
                 ArrayList testSteps = (ArrayList) ((HashMap) testsHash.get(moduleName)).get(test);
                 if (testSteps != null && testSteps.size() > 0) {
-                    executeTest(test, testSteps, true);
+                    try {
+                        executeTest(test, testSteps, true);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                    }
                 } else {
                     logger.warn("No test steps found for this test case. Please re-check!! Skipping ahead.");
                 }

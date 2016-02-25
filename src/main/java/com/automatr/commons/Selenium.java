@@ -1,6 +1,7 @@
 package main.java.com.automatr.commons;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.Augmenter;
@@ -25,6 +26,7 @@ import java.util.Set;
  */
 
 public class Selenium {
+    public static Logger logger = Logger.getLogger(Selenium.class);
 
     /**
      * This method is a listener for AJAX calls - Specifically jQuery calls, it passes after first ajax call completes
@@ -80,21 +82,25 @@ public class Selenium {
      * @param driverType [String] - Specifies the web driver type (Firefox, Chrome, Internet Explorer)
      * @return WebDriver
      */
-    public static WebDriver initDriver(String url, String driverType) {
-        WebDriver driver = getDriver(driverType);
+    public static WebDriver initDriver(String url, String driverType) throws Exception {
+        try {
+            WebDriver driver = getDriver(driverType);
 
-        // Add Ajax Activity listener instance to check for Ajax requests
-        new EventFiringWebDriver(driver).register(new AjaxListener());
+            // Add Ajax Activity listener instance to check for Ajax requests
+            new EventFiringWebDriver(driver).register(new AjaxListener());
 
-        // Maximaize the window
-        driver.manage().window().maximize();
+            // Maximaize the window
+            driver.manage().window().maximize();
 
-        // Open URL if it was passed
-        if (url != null) {
-            driver.get(url);
+            // Open URL if it was passed
+            if (url != null) {
+                driver.get(url);
+            }
+
+            return driver;
+        } catch (Exception e) {
+            throw new Exception(String.format("Could not initialize selenium driver [Please check if selenium grid is running]"));
         }
-
-        return driver;
     }
 
     /**
