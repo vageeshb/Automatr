@@ -14,3 +14,7 @@
 # Idea
 .idea/
 *.iml
+
+# Maven
+/dependencies/
+/dependency-reduced-pom.xml
