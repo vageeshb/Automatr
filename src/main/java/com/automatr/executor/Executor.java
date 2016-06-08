@@ -3,6 +3,7 @@ package main.java.com.automatr.executor;
 import main.java.com.automatr.commons.Selenium;
 import main.java.com.automatr.commons.Utils;
 import org.apache.log4j.Logger;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebElement;
@@ -26,7 +27,8 @@ public class Executor {
     private static HashMap allTestsHash;
     private static HashMap<String, HashMap<String, String[]>> objRepo;
     private static HashMap<String, String> runTimeHash = new HashMap<String, String>();
-    private static WebDriver[] drivers;
+    private static WebDriver driver;
+    private static List<String> windowHandles = new ArrayList<String>();
     private static String parentWindowHandle;
     private static String currentModule;
     private static String currentTest;
@@ -51,7 +53,7 @@ public class Executor {
         } else if (locatorValue == "") {
             return new String[]{"F", "Cannot find web element without Locator Value!"};
         } else {
-            Object element = Selenium.find(drivers[0], locatorType, locatorValue, null);
+            Object element = Selenium.find(driver, locatorType, locatorValue, null);
 
             // Element not found
             if (element == null) {
@@ -60,7 +62,7 @@ public class Executor {
             // Element was found
             else if (element instanceof RemoteWebElement || element instanceof WebElement) {
                 // Perform action step
-                return Selenium.elementActions(drivers[0], (WebElement) element, stepAction, stepDataValue, miscParams);
+                return Selenium.elementActions(driver, (WebElement) element, stepAction, stepDataValue, miscParams);
             } else {
                 return new String[]{"F", "There is a problem at this step. Could not identify the element type."};
             }
@@ -106,10 +108,15 @@ public class Executor {
         // ========================================================================================================================
 
         stepName = stepArray[0];
-        locators = objRepo.get(stepArray[1]).get(stepArray[2]);
-        stepLocatorType = locators[0];
-        stepLocatorValue = locators[1];
         stepAction = stepArray[3];
+        stepLocatorType = "";
+        stepLocatorValue = "";
+
+        if (!stepArray[1].isEmpty()) {
+            locators = objRepo.get(stepArray[1]).get(stepArray[2]);
+            stepLocatorType = locators[0];
+            stepLocatorValue = locators[1];
+        }
 
         // TODO: Check of variable lookup conflicts
         // Step Test Data
@@ -231,7 +238,7 @@ public class Executor {
                     actionResult = new String[]{"F", "Unable to locate element without locator type. Please recheck your step."};
                 else {
                     if (stepLocatorType.equalsIgnoreCase("url"))
-                        actionResult = Selenium.stringActions(drivers[0], stepLocatorType, stepAction, stepDataValue, miscParams);
+                        actionResult = Selenium.stringActions(driver, stepLocatorType, stepAction, stepDataValue, miscParams);
                     else {
                         actionResult = handleWebElementAction(stepLocatorType, stepLocatorValue, stepDataValue, stepAction, miscParams);
                     }
@@ -310,26 +317,32 @@ public class Executor {
 
             // Close Driver
             case "close":
-                drivers[0].close();
+                driver.close();
                 break;
             // Quit Driver
             case "quit":
-                drivers[0].quit();
-                drivers[0] = null;
+                driver.quit();
+                driver = null;
                 break;
             // Open Driver and get URL
             case "open/get":
-                try {
-                    drivers[0] = Selenium.initDriver(stepDataValue, config[1]);
-                } catch (Exception e) {
-                    logger.error(e.getMessage());
-                }
-                break;
-
-            // Open Driver
             case "open":
                 try {
-                    drivers[0] = Selenium.initDriver(null, config[1]);
+                    if (driver instanceof JavascriptExecutor) {
+                        String JS = "window.open('" + stepDataValue + "', '_blank', 'width=300,height=200');";
+                        ((JavascriptExecutor) driver).executeScript(JS);
+                    }
+
+                    Iterator itr = driver.getWindowHandles().iterator();
+                    Object lastWindow = itr.next();
+                    while(itr.hasNext()) {
+                        lastWindow = itr.next();
+                    }
+
+                    windowHandles.add((String) lastWindow);
+
+                    driver.switchTo().window((String) lastWindow);
+                    driver.manage().window().maximize();
                 } catch (Exception e) {
                     logger.error(e.getMessage());
                 }
@@ -337,26 +350,33 @@ public class Executor {
 
             // Get URL
             case "get":
-                drivers[0].get(stepDataValue);
+                driver.get(stepDataValue);
                 break;
 
             // Alert handle
             case "acceptalert":
-                actionResult = Selenium.miscActions(drivers[0], stepAction, null, miscParams);
+                actionResult = Selenium.miscActions(driver, stepAction, null, miscParams);
                 break;
 
             // Execute JAVASCRIPT
             case "javascript":
-                actionResult = Selenium.miscActions(drivers[0], stepAction, stepDataValue, miscParams);
+                actionResult = Selenium.miscActions(driver, stepAction, stepDataValue, miscParams);
                 break;
 
-            // Switch to drivers[0] window
+            // Switch to driver window
             case "switchto":
-                actionResult = Selenium.miscActions(drivers[0], stepAction, stepDataValue, miscParams);
+                try {
+                    String windowName = windowHandles.get(Integer.parseInt(stepDataValue));
+                    driver.switchTo().window(windowName);
+                    driver.manage().window().maximize();
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                }
                 break;
 
             case "switchtoparent":
-                drivers[0].switchTo().window(parentWindowHandle);
+                driver.switchTo().window(parentWindowHandle);
+                driver.manage().window().maximize();
                 break;
 
             // Evaluate an expression
@@ -377,7 +397,7 @@ public class Executor {
 
                 }
                 miscParams[0] = (!newExpression.equals("")) ? newExpression : miscParams[0];
-                actionResult = Selenium.miscActions(drivers[0], stepAction, stepDataValue, miscParams);
+                actionResult = Selenium.miscActions(driver, stepAction, stepDataValue, miscParams);
                 if (actionResult[0].equals(".")) {
                     if (runTimeHash.get(stepDataValue) != null) {
                         runTimeHash.remove(stepDataValue);
@@ -397,7 +417,7 @@ public class Executor {
             // Element not displayed or not present
             case "isnotdisplayed":
             case "isnotpresent":
-                actionResult = Selenium.isNotDisplayed(drivers[0], stepLocatorType, stepLocatorValue);
+                actionResult = Selenium.isNotDisplayed(driver, stepLocatorType, stepLocatorValue);
                 break;
 
             // Runtime data save
@@ -421,7 +441,7 @@ public class Executor {
 
                 while (true) {
                     // Find web elements
-                    List<WebElement> elementList = Selenium.findElements(drivers[0], stepLocatorType, stepLocatorValue);
+                    List<WebElement> elementList = Selenium.findElements(driver, stepLocatorType, stepLocatorValue);
 
                     // Verify Element Count
                     if (elementList != null && elementList.size() == Integer.parseInt(stepDataValue)) {
@@ -524,9 +544,9 @@ public class Executor {
 
             // If element was present, highlight the element, else take complete screenshot
             if (element != null && element instanceof WebElement)
-                Selenium.screenshot(drivers[0], tempFileName, (WebElement) element, actionResult[0].toUpperCase());
+                Selenium.screenshot(driver, tempFileName, (WebElement) element, actionResult[0].toUpperCase());
             else
-                Selenium.screenshot(drivers[0], tempFileName, null, null);
+                Selenium.screenshot(driver, tempFileName, null, null);
         }
         // ========================================================================================================================
         // END OF STEP RESULTS EXTRACTION
@@ -552,15 +572,19 @@ public class Executor {
         // Set Current Test
         currentTest = testName;
 
-        // Initialize drivers[0] and run-time hash if called from module run
+        // Initialize driver and run-time hash if called from module run
         if (openDriver == true) {
             runTimeHash = new HashMap<String, String>();
             try {
-                drivers[0] = Selenium.initDriver(config[0], config[1]);
+                driver = Selenium.initDriver(config[0], config[1]);
             } catch (Exception e) {
                 throw new Exception(String.format("Could not execute test '%s'. Reason: %s", testName, e.getMessage()));
             }
-            parentWindowHandle = drivers[0].getWindowHandle();
+
+            // Empty the windowhandle list
+            windowHandles.clear();
+            parentWindowHandle = driver.getWindowHandle();
+            windowHandles.add(parentWindowHandle);
         }
 
         for (Object testStep : test) {
@@ -576,10 +600,9 @@ public class Executor {
             }
         }
 
-        // Close drivers[0] if called from parent module
+        // Close driver if called from parent module
         if (openDriver == true) {
-            drivers[0].close();
-            drivers[0].quit();
+            driver.quit();
         }
 
         return testStatuses;
@@ -597,9 +620,6 @@ public class Executor {
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static HashMap<String, HashMap<String, ArrayList<String[]>>> performExecution(String[] config, HashMap execManagerHash, HashMap testsHash, HashMap objRepo, HashMap testData) {
-
-        // Define the webdrivers (we support upto 5 instances)
-        drivers = new WebDriver[5];
 
         // Run only the tests as defined in execution manager hash
         Set set = execManagerHash.entrySet();
